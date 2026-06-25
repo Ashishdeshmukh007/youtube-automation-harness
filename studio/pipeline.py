@@ -20,7 +20,9 @@ def _script_shots(script_path: Path) -> tuple[str, list[str]]:
         elif line.strip():
             narration.append(line.strip())
     if not prompts:
-        prompts = ["a cinematic marble statue, dramatic light, dark background"]
+        prompts = ["a cinematic still of ancient India at dawn, Himalayan foothills, "
+                   "soft contemplative light, a weathered palm-leaf manuscript, "
+                   "no text, no people, muted earthy tones"]
     return " ".join(narration), prompts
 
 
@@ -51,7 +53,9 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     im = images.generate(s, prompts, episode_dir / "shots")
     st.record_usage("images", im.usage)
 
-    mu = music.compose(s, "slow ambient stoic pad, no percussion, contemplative",
+    mu = music.compose(s, "slow cinematic ambient drone, contemplative and calm, "
+                       "subtle bansuri flute and tanpura, no percussion, meditative, "
+                       "modern and understated (not devotional)",
                        episode_dir / "music.wav")
     st.record_usage("music", mu.usage)
 

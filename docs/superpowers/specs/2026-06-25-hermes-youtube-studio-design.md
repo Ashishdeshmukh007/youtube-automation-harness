@@ -28,11 +28,22 @@ RLS, etc.).
 
 ### Channel niche
 
-Stoicism / philosophy "self-mastery" faceless format, in the style of
-**@chariotoftheself** (the name nods to Plato's chariot allegory). Calm, deep
-narrated voiceover over slow cinematic visuals (statues, nature, abstract
-imagery) with ambient music; 8–15 min long-form. In this niche, **voice quality
-and script depth are the product**; visuals are slow and secondary.
+**Chariot of the Self** — ancient Indian wisdom for the modern mind. The name is
+from the Katha Upanishad: *"Know the Self as the rider in the chariot, the body as
+the chariot, the intellect as the charioteer, the mind as the reins."* The channel
+turns **Bhagavad Gita, Upanishads, Yoga Sutras, and Chanakya** into practices for
+modern problems.
+
+**Per-video format:** take one modern problem (burnout, anxiety, anger, identity,
+fear) → show what ancient India already knew about it → **end with a concrete
+practice the viewer can use this week.** Framing is explicitly **"not religion —
+the oldest operating manual for the human mind."**
+
+Faceless, long-form (8–15 min): calm, deep narrated voiceover over slow cinematic
+visuals (Himalayan dawns, weathered manuscripts, contemplative natural imagery,
+the chariot/horse motif — tasteful and modern, never devotional kitsch) with
+restrained ambient music. **Voice quality, script depth, and the actionable
+practice are the product**; visuals are slow and secondary.
 
 ---
 
@@ -84,7 +95,7 @@ STUDIO     deterministic media toolkit   (Python + ffmpeg, called by agents)
 | Role | Responsibility |
 |------|----------------|
 | `showrunner` | Orchestrator. Owns the pipeline, delegates to other roles, enforces the three gates, updates episode state. |
-| `researcher` | Proposes topics with angles/hooks; gathers source material (stoic canon, accurate attribution). |
+| `researcher` | Proposes topics (one modern problem each); gathers source material from the Indian wisdom canon (Gita / Upanishads / Yoga Sutras / Chanakya) with accurate attribution. |
 | `scriptwriter` | Writes the narration script in channel voice using `brand-bible` + `script-structure`. |
 | `voice-engineer` | Generates voiceover via `studio/tts.py` (MiniMax `speech-2.8-hd`); tunes pacing/voice. |
 | `visual-designer` | Produces image prompts + shot list (`studio/images.py`, `image-01`); designs the thumbnail. |
@@ -93,7 +104,9 @@ STUDIO     deterministic media toolkit   (Python + ffmpeg, called by agents)
 
 ### 3.2 Skills (9, model-invoked)
 
-`brand-bible`, `script-structure`, `stoic-research`, `tts-narration`,
+`brand-bible`, `script-structure` (problem → ancient teaching → weekly practice),
+`indian-wisdom-research` (Gita / Upanishads / Yoga Sutras / Chanakya — accurate
+sourcing, attribution, and the "not religion" framing), `tts-narration`,
 `visual-prompting`, `ffmpeg-assembly`, `thumbnail-design`, `youtube-seo`,
 `youtube-policy` (reused-content / copyright / monetization compliance).
 
