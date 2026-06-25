@@ -5,7 +5,7 @@ from studio.types import MediaResult
 
 
 def compose(s: Settings, prompt: str, out_path: Path) -> MediaResult:
-    url, headers, payload = minimax.music_request(s, prompt, lyrics="")
-    data = minimax.post_json(url, headers, payload)
+    url, headers, payload = minimax.music_request(s, prompt)
+    data = minimax.post_music(url, headers, payload)
     out_path.write_bytes(bytes.fromhex(data["data"]["audio"]))
-    return MediaResult(path=out_path, usage={"tracks": 1})
+    return MediaResult(path=out_path, usage={"tracks": 1, "duration_ms": data.get("extra_info", {}).get("music_duration", 0)})

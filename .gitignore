@@ -8,10 +8,15 @@ client_secret*.json
 # Generated media (large, regenerable)
 episodes/*/voiceover.wav
 episodes/*/music.wav
+episodes/*/music_full.wav
 episodes/*/video.mp4
 episodes/*/shots/
+episodes/*/shots_burned/
 episodes/*/captions.srt
 episodes/*/thumb.png
+episodes/*/intro.png
+episodes/*/outro.png
+episodes/*/build_state.json
 
 # Python
 __pycache__/
@@ -21,6 +26,9 @@ venv/
 
 # OS
 .DS_Store
+
+# Harness upload/attachment staging (large raw originals, not source)
+.hermes/
 
 # Build artifact
 *.egg-info/

@@ -1,0 +1,40 @@
+{
+  "slug": "2026-06-26-the-gita-on-comparison",
+  "stage": "render_review",
+  "approvals": {
+    "script": "2026-06-26T00:14:49"
+  },
+  "usage": [
+    {
+      "stage": "images",
+      "images": 6,
+      "note": "04-09 generated this session; 00-03 from prior"
+    },
+    {
+      "stage": "music",
+      "tracks": 1,
+      "duration_ms": 70008
+    },
+    {
+      "stage": "images",
+      "images": 3,
+      "note": "character refs (Arjuna,Krishna) + shots 02/04 via subject_reference"
+    }
+  ],
+  "created_at": "2026-06-26T00:08:41",
+  "topic": {
+    "problem": "Comparison / everyone's ahead",
+    "source": "Bhagavad Gita 3.35",
+    "verse_summary": "Better is one's own dharma, though imperfectly performed, than the dharma of another, well performed.",
+    "angle": "Comparison is living someone else's path on your own clock.",
+    "practice": "Write your one task for the season. Measure only against it. No looking sideways.",
+    "working_title": "The dharma you're skipping (Bhagavad Gita)"
+  },
+  "characters_used": [
+    "Arjuna",
+    "Krishna"
+  ],
+  "sfx_used": [
+    "phone-ring"
+  ]
+}

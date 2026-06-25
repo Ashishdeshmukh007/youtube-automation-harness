@@ -51,6 +51,11 @@ picks (GATE 0). Move a topic to **Used** once an episode publishes.
 
 ---
 
+## In progress
+
+- **Comparison / everyone's ahead** — Gita 3.35. Episode: `episodes/2026-06-26-the-gita-on-comparison/`
+  (state: `proposed`, awaiting GATE 0 confirmation + script draft).
+
 ## Used (published)
 
 _None yet._
