@@ -28,6 +28,19 @@ def test_image_request_shape():
     assert payload["n"] == 3
 
 
+def test_image_request_includes_subject_reference_when_given():
+    ref = "data:image/jpeg;base64,AAAA"
+    url, headers, payload = minimax.image_request(
+        _settings(), "Arjuna at dawn",
+        subject_reference=[{"type": "character", "image_file": ref}])
+    assert payload["subject_reference"][0]["image_file"] == ref
+
+
+def test_image_request_omits_subject_reference_when_none():
+    url, headers, payload = minimax.image_request(_settings(), "a chariot at dawn")
+    assert "subject_reference" not in payload
+
+
 def test_music_request_shape():
     url, headers, payload = minimax.music_request(_settings(), "calm ambient", lyrics="")
     assert url == "https://api.minimax.io/v1/music_generation"

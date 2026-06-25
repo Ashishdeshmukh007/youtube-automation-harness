@@ -1,13 +1,22 @@
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 from studio.config import load_settings
 from studio.state import EpisodeState, Stage
-from studio import tts, images, music, captions, assemble, thumbnail, upload
+from studio import (tts, images, music, captions, assemble, thumbnail, upload,
+                    cards, sound_fx)
+
+# Design-language constants: standard card durations and the brand caption look.
+INTRO_SECONDS = 3.0
+OUTRO_SECONDS = 6.0
+_CAPTION_TEXT = (224, 200, 160)   # off-white #E0C8A0
+_CAPTION_BAND = (58, 38, 32)      # warm shadow #3A2620
+_CAPTION_BAND_ALPHA = 180
 
 
 def _script_shots(script_path: Path) -> tuple[str, list[str]]:
@@ -38,6 +47,34 @@ def _image_files(shots_dir: Path) -> list[Path]:
     return sorted(shots_dir.glob("[0-9][0-9].png"))
 
 
+def _loop_audio(src: Path, dst: Path, seconds: float) -> Path:
+    """Loop a (short) audio file to cover `seconds`, with a 2s fade-out tail.
+    MiniMax music caps at ~70s, so a full episode needs the bed looped."""
+    subprocess.run(
+        ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+         "-stream_loop", "-1", "-i", str(src), "-t", f"{seconds:.3f}",
+         "-af", f"afade=t=out:st={max(0.0, seconds - 2):.3f}:d=2", str(dst)],
+        check=True)
+    return dst
+
+
+def _burned_shots_dir(episode_dir: Path, total_seconds: float) -> Path:
+    """Copy the shots and burn the captions onto the copies (brand palette),
+    leaving the originals clean (e.g. for the thumbnail). Returns the copy dir."""
+    src = episode_dir / "shots"
+    dst = episode_dir / "shots_burned"
+    if dst.exists():
+        shutil.rmtree(dst)
+    dst.mkdir(parents=True)
+    for p in _image_files(src):
+        shutil.copy(p, dst / p.name)
+    captions.burn_captions_into_frames(
+        dst, episode_dir / "captions.srt", total_seconds, fps=assemble.FPS,
+        text_color=_CAPTION_TEXT, band_color=_CAPTION_BAND,
+        band_alpha=_CAPTION_BAND_ALPHA)
+    return dst
+
+
 def render_episode(episode_dir: Path, settings=None) -> None:
     episode_dir = Path(episode_dir)
     st = EpisodeState.load(episode_dir)
@@ -59,19 +96,31 @@ def render_episode(episode_dir: Path, settings=None) -> None:
                        episode_dir / "music.wav")
     st.record_usage("music", mu.usage)
 
-    # Produce captions as an .srt sidecar (uploaded as a YouTube subtitle track),
-    # not burned into the video — keeps the visuals clean for this niche.
+    # Captions: an .srt sidecar (uploaded as a YouTube subtitle track) AND burned
+    # onto the frames for on-screen legibility (silent autoplay / mobile).
     captions.transcribe(episode_dir / "voiceover.wav", episode_dir / "captions.srt")
 
     total = _voiceover_seconds(episode_dir / "voiceover.wav")
-    shot_files = _image_files(episode_dir / "shots")
+
+    # Standard design-language bookends + looped bed covering the full runtime.
+    cards.render_intro(episode_dir / "intro.png")
+    cards.render_outro(episode_dir / "outro.png")
+    total_video = INTRO_SECONDS + total + OUTRO_SECONDS
+    music_full = _loop_audio(episode_dir / "music.wav",
+                             episode_dir / "music_full.wav", total_video)
+
+    shot_files = _image_files(_burned_shots_dir(episode_dir, total))
+    sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())
     assemble.render(
         shots=shot_files, voiceover=episode_dir / "voiceover.wav",
-        music=episode_dir / "music.wav",
-        out=episode_dir / "video.mp4", total_seconds=total)
+        music=music_full, out=episode_dir / "video.mp4", total_seconds=total,
+        sfx_events=sfx_events, sfx_resolver=sound_fx.resolve_event,
+        intro_card=episode_dir / "intro.png", outro_card=episode_dir / "outro.png",
+        color_grade=True)
 
-    thumbnail.compose(shot_files[0], _title_from(episode_dir),
-                      episode_dir / "thumb.png")
+    # Thumbnail from the clean (un-captioned) first shot.
+    thumbnail.compose(_image_files(episode_dir / "shots")[0],
+                      _title_from(episode_dir), episode_dir / "thumb.png")
 
     st.set_stage(Stage.RENDER_REVIEW)
 
