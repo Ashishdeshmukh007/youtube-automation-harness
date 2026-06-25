@@ -99,15 +99,33 @@ def publish_episode(episode_dir: Path, settings=None) -> str:
     return video_id
 
 
+# Gate name -> stage the episode advances to once that gate is approved.
+_GATE_STAGE = {"script": Stage.SCRIPT_APPROVED, "video": Stage.APPROVED}
+
+
+def approve_episode(episode_dir: Path, gate: str) -> None:
+    """Record a human gate approval and advance the episode's stage."""
+    if gate not in _GATE_STAGE:
+        raise ValueError(f"unknown gate: {gate!r} (expected one of {list(_GATE_STAGE)})")
+    st = EpisodeState.load(Path(episode_dir))
+    st.approve(gate)
+    st.set_stage(_GATE_STAGE[gate])
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="studio.pipeline")
     sub = parser.add_subparsers(dest="cmd", required=True)
     for name in ("render", "publish"):
         p = sub.add_parser(name)
         p.add_argument("episode_dir")
+    ap = sub.add_parser("approve")
+    ap.add_argument("episode_dir")
+    ap.add_argument("--gate", required=True, choices=list(_GATE_STAGE))
     args = parser.parse_args(argv)
     if args.cmd == "render":
         render_episode(Path(args.episode_dir))
+    elif args.cmd == "approve":
+        approve_episode(Path(args.episode_dir), args.gate)
     else:
         print(publish_episode(Path(args.episode_dir)))
     return 0

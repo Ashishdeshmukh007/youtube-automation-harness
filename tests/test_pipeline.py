@@ -57,3 +57,31 @@ def test_publish_uploads_and_advances(tmp_path, mocker):
     vid = pipeline.publish_episode(tmp_path, settings=None)
     assert vid == "VIDEOID123"
     assert EpisodeState.load(tmp_path).stage == Stage.PUBLISHED
+
+
+def test_approve_script_records_gate_and_advances(tmp_path):
+    _seed(tmp_path, "script_draft", {"topic": "t"})
+    pipeline.approve_episode(tmp_path, "script")
+    st = EpisodeState.load(tmp_path)
+    assert "script" in st.data["approvals"]
+    assert st.stage == Stage.SCRIPT_APPROVED
+
+
+def test_approve_video_records_gate_and_advances(tmp_path):
+    _seed(tmp_path, "render_review", {"topic": "t", "script": "t"})
+    pipeline.approve_episode(tmp_path, "video")
+    st = EpisodeState.load(tmp_path)
+    assert "video" in st.data["approvals"]
+    assert st.stage == Stage.APPROVED
+
+
+def test_approve_rejects_unknown_gate(tmp_path):
+    _seed(tmp_path, "script_draft", {})
+    with pytest.raises(ValueError, match="gate"):
+        pipeline.approve_episode(tmp_path, "bogus")
+
+
+def test_approve_cli_invokes_engine(tmp_path):
+    _seed(tmp_path, "script_draft", {"topic": "t"})
+    pipeline.main(["approve", str(tmp_path), "--gate", "script"])
+    assert "script" in EpisodeState.load(tmp_path).data["approvals"]
