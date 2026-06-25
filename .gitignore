@@ -1,0 +1,23 @@
+# Secrets — never commit
+.env
+.env.local
+*.key
+youtube_token.json
+client_secret*.json
+
+# Generated media (large, regenerable)
+episodes/*/voiceover.wav
+episodes/*/music.wav
+episodes/*/video.mp4
+episodes/*/shots/
+episodes/*/captions.srt
+episodes/*/thumb.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
