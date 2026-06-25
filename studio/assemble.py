@@ -6,7 +6,11 @@ W, H = 1920, 1080
 
 
 def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
-                      captions: Path, out: Path, total_seconds: float) -> list[str]:
+                      out: Path, total_seconds: float) -> list[str]:
+    # Captions are produced as a .srt sidecar (see captions.py) and uploaded to
+    # YouTube as a subtitle track rather than burned in — the philosophy niche
+    # favors clean visuals with no on-screen text, and it avoids a hard libass
+    # dependency in the ffmpeg build.
     n = len(shots)
     per_shot = total_seconds / n
     frames = int(round(per_shot * FPS))
@@ -26,9 +30,7 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
             f"d={frames}:s={W}x{H}:fps={FPS}[v{i}]"
         )
     concat_inputs = "".join(f"[v{i}]" for i in range(n))
-    filters.append(f"{concat_inputs}concat=n={n}:v=1:a=0[vcat]")
-    # burn captions
-    filters.append(f"[vcat]subtitles={captions}[vout]")
+    filters.append(f"{concat_inputs}concat=n={n}:v=1:a=0[vout]")
     # mix: voiceover full, music ducked to 0.18
     va, ma = n, n + 1  # audio input indices
     filters.append(
@@ -42,9 +44,9 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
     return args
 
 
-def render(*, shots: list[Path], voiceover: Path, music: Path, captions: Path,
-           out: Path, total_seconds: float) -> Path:
+def render(*, shots: list[Path], voiceover: Path, music: Path, out: Path,
+           total_seconds: float) -> Path:
     args = build_ffmpeg_args(shots=shots, voiceover=voiceover, music=music,
-                             captions=captions, out=out, total_seconds=total_seconds)
+                             out=out, total_seconds=total_seconds)
     subprocess.run(args, check=True)
     return out

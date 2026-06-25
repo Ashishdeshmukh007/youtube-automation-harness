@@ -55,13 +55,15 @@ def render_episode(episode_dir: Path, settings=None) -> None:
                        episode_dir / "music.wav")
     st.record_usage("music", mu.usage)
 
+    # Produce captions as an .srt sidecar (uploaded as a YouTube subtitle track),
+    # not burned into the video — keeps the visuals clean for this niche.
     captions.transcribe(episode_dir / "voiceover.wav", episode_dir / "captions.srt")
 
     total = _voiceover_seconds(episode_dir / "voiceover.wav")
     shot_files = _image_files(episode_dir / "shots")
     assemble.render(
         shots=shot_files, voiceover=episode_dir / "voiceover.wav",
-        music=episode_dir / "music.wav", captions=episode_dir / "captions.srt",
+        music=episode_dir / "music.wav",
         out=episode_dir / "video.mp4", total_seconds=total)
 
     thumbnail.compose(shot_files[0], _title_from(episode_dir),
