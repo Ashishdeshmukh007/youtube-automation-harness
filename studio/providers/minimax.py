@@ -47,6 +47,23 @@ def music_request(s: Settings, prompt: str, *, lyrics: str = " "):
     return url, _auth(s), payload
 
 
+def chat_request(s: Settings, messages: list[dict], *,
+                 model: str | None = None, temperature: float = 0.7,
+                 max_tokens: int = 800):
+    """Build (url, headers, payload) for a chat completion call against the
+    MiniMax abab6.5s-chat model (provider-agnostic interface — same shape as
+    the image/music endpoints). `messages` is the standard [{role, content}, …]
+    list. Used by studio.title_recommend (and any future LLM-driven tool)."""
+    url = f"{s.minimax_host}/v1/text/chatcompletion_v2"
+    payload = {
+        "model": model or "abab6.5s-chat",
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+    return url, _auth(s), payload
+
+
 # Music generation can take ~2 minutes for an ambient track; the default 120s
 # timeout in post_json is too tight. Music callers use this longer window.
 _MUSIC_TIMEOUT = 240
@@ -61,3 +78,18 @@ def post_json(url: str, headers: dict, payload: dict, *, timeout: int = 120) -> 
 def post_music(url: str, headers: dict, payload: dict) -> dict:
     """Post a music_generation request with the longer timeout."""
     return post_json(url, headers, payload, timeout=_MUSIC_TIMEOUT)
+
+
+def post_chat(url: str, headers: dict, payload: dict, *,
+              timeout: int = 120) -> str:
+    """Post a chat completion and return the assistant's text. Raises on HTTP
+    error or if the response shape is unexpected."""
+    body = post_json(url, headers, payload, timeout=timeout)
+    choices = body.get("choices") or []
+    if not choices:
+        raise RuntimeError(f"chat completion returned no choices: {body}")
+    msg = choices[0].get("message") or {}
+    text = msg.get("content") or ""
+    if not text.strip():
+        raise RuntimeError(f"chat completion returned empty content: {body}")
+    return text

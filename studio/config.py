@@ -17,6 +17,7 @@ class Settings:
     youtube_client_secret: str
     youtube_token: str
     fal_key: str = ""  # fal.ai image-to-video (hybrid pipeline); optional
+    youtube_api_key: str = ""  # YouTube Data API v3 server key (competitor research)
 
 
 def _require(name: str) -> str:
@@ -38,4 +39,5 @@ def load_settings() -> Settings:
         youtube_client_secret=os.getenv("YOUTUBE_CLIENT_SECRET", "client_secret.json"),
         youtube_token=os.getenv("YOUTUBE_TOKEN", "youtube_token.json"),
         fal_key=os.getenv("FAL_KEY", ""),
+        youtube_api_key=os.getenv("YOUTUBE_API_KEY", ""),
     )

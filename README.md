@@ -330,16 +330,77 @@ Two levers keep spend predictable:
 
 ---
 
+## Beyond publishing — research & optimization
+
+The core pipeline produces a video and ships it. Three CLI tools round out the
+loop so the next video is smarter than the last one.
+
+### Competitor research
+
+```bash
+.venv/bin/python -m studio.competitors \
+    --query "ancient indian wisdom anxiety" \
+    --max-channels 10 --top-videos 5
+```
+
+Discovers the top-view channels in a niche and pulls their top-view videos
+into `competitor-reports/competitors-<timestamp>.json`. Use it to find:
+
+- **Underserved topics** — competitors with high views but no coverage of your angle.
+- **Title patterns** — what the niche's winning titles look like, so your
+  A/B title recommender can be grounded in real data.
+- **Channel benchmarks** — typical subscriber counts and views for "doing well"
+  in this niche.
+
+Uses the YouTube **Data API v3 server key** (`YOUTUBE_API_KEY` in `.env`,
+different from the OAuth used for upload). Public data, no quota concerns.
+
+### A/B title recommender
+
+```bash
+.venv/bin/python -m studio.title_recommend episodes/<slug> \
+    --niche "ancient indian wisdom anxiety"
+```
+
+Reads `metadata.json`, samples the top-view niche titles (via the same Data
+API key), then asks the MiniMax chat model for `N` title variants grounded in
+the channel voice (see `brand/brand-bible.md` — pain first, scripture second,
+proven templates). Writes `episodes/<slug>/title-candidates.json` with each
+candidate + the LLM's rationale + which template it maps to.
+
+The owner picks a winner at the title gate and overwrites `metadata.title` before
+`/publish`.
+
+### Retention import
+
+```bash
+.venv/bin/python -m studio.retention episodes/<slug> --days 30
+```
+
+After a video is published, this pulls the **YouTube Analytics** retention
+curve (`videoViewRetention` metric) and saves it as
+`episodes/<slug>/retention.json` plus a `retention.png` chart. Lets you see:
+
+- **Hook strength** — dropoff in the first 30s.
+- **Practice payoff** — where viewers leave relative to the practice beat.
+- **Closing bridge** — does the final-15s bridge to next video keep people?
+
+Needs the **OAuth** upload token (same `YOUTUBE_CLIENT_SECRET` /
+`YOUTUBE_TOKEN`) plus the YouTube Analytics API enabled for the project.
+
+---
+
 ## Tests
 
 ```bash
 .venv/bin/pytest
 ```
 
-132 tests covering: state machine, gate enforcement, hooks, TTS/image/music
+180 tests covering: state machine, gate enforcement, hooks, TTS/image/music
 adapters, ffmpeg assembly (xfade chain, last-shot extension, color grade,
 bookend concatenation), captions, thumbnail, upload, brand assets, configuration
-loading, and end-to-end pipeline mocking.
+loading, end-to-end pipeline mocking, competitor research, retention import,
+and the A/B title recommender.
 
 ---
 
@@ -382,14 +443,18 @@ loading, and end-to-end pipeline mocking.
 │   ├── captions.py               #   Whisper .srt sidecar
 │   ├── assemble.py               #   ffmpeg graph (zoompan + xfade + amix)
 │   ├── thumbnail.py              #   Pillow thumbnail composite
-│   ├── upload.py                 #   YouTube Data API v3
+│   ├── upload.py                 #   YouTube Data API v3 (OAuth)
 │   ├── sound_fx.py               #   SFX event parser + resolver
 │   ├── video_clips.py            #   fal.ai image-to-video wrapper
 │   ├── pronunciation.py          #   Sanskrit/Hindi phonetic respelling
+│   ├── competitors.py            #   CLI: niche/channel research (Data API)
+│   ├── retention.py              #   CLI: pull retention curve (Analytics API)
+│   ├── title_recommend.py        #   CLI: A/B title variants via LLM
 │   └── providers/                #   Per-API adapters (provider-agnostic)
 │       ├── minimax.py
-│       └── fal.py
-├── tests/                        # 132 pytest tests
+│       ├── fal.py
+│       └── youtube_data.py
+├── tests/                        # 180 pytest tests
 ├── .env.template                 # Copy to .env and fill in
 ├── .gitignore                    # Secrets + generated media
 ├── CLAUDE.md                     # Project guide the AI reads each session
