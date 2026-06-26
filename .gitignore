@@ -37,3 +37,11 @@ venv/
 # Local audio A/B samples (scratch)
 audio-samples/
 episodes/*/*.ffmpeg.log
+
+# Bookend scratch (keep only the final brand/intro.mp4, brand/outro.mp4, bookend-music.wav)
+brand/bookend-candidates/
+brand/*.clip.mp4
+brand/intro.clean.mp4
+brand/Gemini*.mp4
+episodes/*/hybrid_sample.mp4
+episodes/*/shots_burned/

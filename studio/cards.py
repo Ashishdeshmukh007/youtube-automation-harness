@@ -63,3 +63,51 @@ def render_outro(out_path: Path, *, channel: str = "CHARIOT OF THE SELF",
     _centered(draw, tagline, int(H * 0.64), _font(40), MUTED)
     img.save(out_path)
     return out_path
+
+
+# --- Transparent text overlays (composited over the animated bookend footage) ---
+
+def _shadowed(draw, text, y, font, fill, *, tracking=0, off=5):
+    """Centered text with a soft dark drop shadow so it reads over bright footage."""
+    shadow = (10, 8, 6, 220)
+    _centered(draw, text, y + off, font, shadow, tracking=tracking)
+    _centered(draw, text, y, font, fill, tracking=tracking)
+
+
+def _bottom_scrim(img: Image.Image, start: float = 0.5, max_alpha: int = 190) -> None:
+    """Composite a dark gradient over the lower part of the frame for text legibility."""
+    top = int(H * start)
+    grad = Image.new("L", (1, H), 0)
+    for y in range(top, H):
+        grad.putpixel((0, y), int(max_alpha * (y - top) / (H - top)))
+    alpha = grad.resize((W, H))
+    scrim = Image.new("RGBA", (W, H), (8, 6, 4, 0))
+    scrim.putalpha(alpha)
+    img.alpha_composite(scrim)
+
+
+def render_intro_overlay(out_path: Path, *, channel: str = "CHARIOT OF THE SELF",
+                         tagline: str = "Ancient wisdom for the modern mind") -> Path:
+    # Lower-third title so it never covers the hero subject's face.
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    _bottom_scrim(img)
+    draw = ImageDraw.Draw(img)
+    _shadowed(draw, channel, int(H * 0.72), _font(100), TITLE, tracking=8)
+    _divider(draw, int(H * 0.83))
+    _shadowed(draw, tagline, int(H * 0.86), _font(44), (240, 224, 190, 255))
+    img.save(out_path)
+    return out_path
+
+
+def render_outro_overlay(out_path: Path, *, channel: str = "CHARIOT OF THE SELF",
+                         cta: str = "Subscribe",
+                         tagline: str = "Ancient wisdom for the modern mind") -> Path:
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    _bottom_scrim(img, start=0.42, max_alpha=200)
+    draw = ImageDraw.Draw(img)
+    _shadowed(draw, cta, int(H * 0.60), _font(108), TITLE)
+    _divider(draw, int(H * 0.74))
+    _shadowed(draw, channel, int(H * 0.79), _font(56), ACCENT, tracking=6)
+    _shadowed(draw, tagline, int(H * 0.88), _font(38), (240, 224, 190, 255))
+    img.save(out_path)
+    return out_path

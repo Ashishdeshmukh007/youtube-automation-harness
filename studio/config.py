@@ -16,6 +16,7 @@ class Settings:
     music_model: str
     youtube_client_secret: str
     youtube_token: str
+    fal_key: str = ""  # fal.ai image-to-video (hybrid pipeline); optional
 
 
 def _require(name: str) -> str:
@@ -36,4 +37,5 @@ def load_settings() -> Settings:
         music_model=os.getenv("MINIMAX_MUSIC_MODEL", "music-2.6"),
         youtube_client_secret=os.getenv("YOUTUBE_CLIENT_SECRET", "client_secret.json"),
         youtube_token=os.getenv("YOUTUBE_TOKEN", "youtube_token.json"),
+        fal_key=os.getenv("FAL_KEY", ""),
     )
