@@ -31,6 +31,27 @@ def test_script_shots_excludes_non_narration_lines(tmp_path):
         assert leak not in narration, f"non-narration leaked into TTS text: {leak!r}"
 
 
+def test_script_beats_maps_narration_and_marks_hero_clips(tmp_path):
+    script = tmp_path / "script.md"
+    script.write_text(
+        "# Title\n"
+        "Shot: a phone in the dark\n"
+        "It's late at night. You scroll.\n"
+        "Clip: Krishna blesses Arjuna on the chariot\n"
+        "Krishna speaks softly.\n"
+        "Sfx: bell\n[beat]\n"
+        "Stay on your road.\n")
+    narration, beats = pipeline._script_beats(script)
+    assert narration == "It's late at night. You scroll. Krishna speaks softly. Stay on your road."
+    assert [b["kind"] for b in beats] == ["still", "clip"]
+    assert beats[0]["prompt"] == "a phone in the dark"
+    assert beats[1]["prompt"] == "Krishna blesses Arjuna on the chariot"
+    # beat 0 covers "It's late at night. You scroll." (6 words)
+    assert beats[0]["words"] == 6
+    # beat 1 covers "Krishna speaks softly." + "Stay on your road." (3 + 4 = 7)
+    assert beats[1]["words"] == 7
+
+
 def test_render_requires_script_gate(tmp_path):
     _seed(tmp_path, "script_draft", {})  # no script approval
     with pytest.raises(GateError, match="script"):
@@ -48,11 +69,12 @@ def test_render_runs_all_stages_and_advances(tmp_path, mocker):
                  return_value=mocker.Mock(usage={"tracks": 1}))
     mocker.patch("studio.pipeline.captions.transcribe")
     mocker.patch("studio.pipeline._voiceover_seconds", return_value=20.0)
-    mocker.patch("studio.pipeline._image_files", return_value=[tmp_path / "shots" / "00.png"])
+    mocker.patch("studio.pipeline._image_files",
+                 return_value=[tmp_path / "shots" / "00.png", tmp_path / "shots" / "01.png"])
     mocker.patch("studio.pipeline._loop_audio", return_value=tmp_path / "music_full.wav")
     mocker.patch("studio.pipeline._normalize_audio", return_value=tmp_path / "voiceover_norm.wav")
     mocker.patch("studio.pipeline._concat_bookends", return_value=tmp_path / "video.mp4")
-    mocker.patch("studio.pipeline.assemble.render")
+    mocker.patch("studio.pipeline.assemble.render_hybrid")
     mocker.patch("studio.pipeline.thumbnail.compose")
     pipeline.render_episode(tmp_path, settings=None)
     st = EpisodeState.load(tmp_path)

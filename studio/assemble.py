@@ -271,7 +271,11 @@ def build_hybrid_args(*, segments: list[dict], voiceover: Path, music: Path,
 
     args: list[str] = ["ffmpeg", "-y"]
     for seg in segments:
-        args += ["-i", str(seg["path"])]
+        # Loop clips so a short (~5s) hero clip fills its full beat duration.
+        if seg["kind"] == "clip":
+            args += ["-stream_loop", "-1", "-i", str(seg["path"])]
+        else:
+            args += ["-i", str(seg["path"])]
     args += ["-i", str(voiceover), "-i", str(music)]
 
     sfx_paths, sfx_offsets = [], []

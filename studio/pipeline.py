@@ -8,12 +8,17 @@ from pathlib import Path
 from studio.config import load_settings
 from studio.state import EpisodeState, Stage
 from studio import (tts, images, music, captions, assemble, thumbnail, upload,
-                    sound_fx)
+                    sound_fx, video_clips)
 
 # Reusable animated brand bookends (generated once, used by every episode).
 _BRAND = Path(__file__).resolve().parents[1] / "brand"
 BOOKEND_INTRO = _BRAND / "intro.mp4"
 BOOKEND_OUTRO = _BRAND / "outro.mp4"
+
+# Generic motion prompt for animating a HERO ('Clip:') still into a clip.
+_CLIP_MOTION = ("Gentle cinematic motion: a slow, subtle push-in; dust, light, hair "
+                "and cloth drift softly; the subjects hold their poses. Reverent, "
+                "filmic, no distortion.")
 
 
 def _script_shots(script_path: Path) -> tuple[str, list[str]]:
@@ -46,6 +51,36 @@ def _script_shots(script_path: Path) -> tuple[str, list[str]]:
                    "soft contemplative light, a weathered palm-leaf manuscript, "
                    "no text, no people, muted earthy tones"]
     return " ".join(narration), prompts
+
+
+def _script_beats(script_path: Path) -> tuple[str, list[dict]]:
+    """Parse the script into ordered visual beats, each tied to the narration it
+    covers — so every image reflects exactly what is being said while it's on screen.
+
+      Shot: <prompt>   -> a still beat (Ken Burns)
+      Clip: <prompt>   -> an animated HERO beat (motion only where it has impact)
+
+    Each beat accumulates the narration lines that follow it (until the next beat);
+    `words` is used to size the beat's on-screen duration proportional to its
+    narration. Returns (full_narration, beats[{kind, prompt, words}]).
+    """
+    beats: list[dict] = []
+    narration: list[str] = []
+    for line in script_path.read_text().splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        low = s.lower()
+        if low.startswith("shot:") or low.startswith("clip:"):
+            kind = "clip" if low.startswith("clip:") else "still"
+            beats.append({"kind": kind, "prompt": s.split(":", 1)[1].strip(), "words": 0})
+        elif low.startswith("sfx:") or s.startswith("#") or (s.startswith("[") and s.endswith("]")):
+            continue
+        else:
+            narration.append(s)
+            if beats:
+                beats[-1]["words"] += len(s.split())
+    return " ".join(narration), beats
 
 
 def _voiceover_seconds(path: Path) -> float:
@@ -104,12 +139,13 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     st.set_stage(Stage.RENDERING)
     s = settings or load_settings()
 
-    narration, prompts = _script_shots(episode_dir / "script.md")
+    narration, beats = _script_beats(episode_dir / "script.md")
 
     vo = tts.synthesize(s, narration, episode_dir / "voiceover.wav")
     st.record_usage("tts", vo.usage)
 
-    im = images.generate(s, prompts, episode_dir / "shots")
+    # One still per beat, in narration order (so each image matches its voiceover).
+    im = images.generate(s, [b["prompt"] for b in beats], episode_dir / "shots")
     st.record_usage("images", im.usage)
 
     mu = music.compose(s, "slow cinematic ambient drone, contemplative and calm, "
@@ -130,20 +166,32 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     voice_norm = _normalize_audio(episode_dir / "voiceover.wav",
                                   episode_dir / "voiceover_norm.wav")
 
-    # Render the body (shots + voice + music + sfx, graded; captions NOT burned —
-    # we rely on YouTube's captions), then bracket it with the animated bookends.
-    shot_files = _image_files(episode_dir / "shots")
+    # Hybrid timeline: each beat is on screen for its share of the narration (so
+    # visuals track the voiceover); HERO 'Clip:' beats are animated, the rest are
+    # Ken-Burns stills. We animate only where motion has real impact.
+    stills = _image_files(episode_dir / "shots")
+    clips_dir = episode_dir / "clips"; clips_dir.mkdir(exist_ok=True)
+    total_words = sum(b["words"] for b in beats) or 1
+    segments = []
+    for i, b in enumerate(beats):
+        secs = max(2.0, b["words"] / total_words * total)
+        if b["kind"] == "clip" and s.fal_key:
+            clip = video_clips.animate(s.fal_key, stills[i], _CLIP_MOTION,
+                                       clips_dir / f"{i:02d}.mp4")
+            segments.append({"kind": "clip", "path": clip, "seconds": secs})
+        else:
+            segments.append({"kind": "still", "path": stills[i], "seconds": secs})
+
+    # Body (graded; captions NOT burned — YouTube auto-captions), then bookends.
     sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())
     body = episode_dir / "body.mp4"
-    assemble.render(
-        shots=shot_files, voiceover=voice_norm, music=music_full, out=body,
+    assemble.render_hybrid(
+        segments=segments, voiceover=voice_norm, music=music_full, out=body,
         total_seconds=total, sfx_events=sfx_events,
         sfx_resolver=sound_fx.resolve_event, color_grade=True)
     _concat_bookends(BOOKEND_INTRO, body, BOOKEND_OUTRO, episode_dir / "video.mp4")
 
-    # Thumbnail from the clean (un-captioned) first shot.
-    thumbnail.compose(_image_files(episode_dir / "shots")[0],
-                      _title_from(episode_dir), episode_dir / "thumb.png")
+    thumbnail.compose(stills[0], _title_from(episode_dir), episode_dir / "thumb.png")
 
     st.set_stage(Stage.RENDER_REVIEW)
 

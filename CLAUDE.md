@@ -78,8 +78,19 @@ fill it once.
 ## Conventions
 
 - Episode slug: `YYYY-MM-DD-kebab-topic` (e.g. `2026-06-25-the-gita-on-burnout`).
-- Script format: narration lines are spoken; a line beginning `Shot:` is an image
-  prompt for that beat. The visual-designer writes the `Shot:` lines.
+- Script format: narration lines are spoken. A line beginning `Shot:` is a still
+  beat; `Clip:` is an **animated hero beat**. The visual-designer writes these.
+  Two hard rules (the engine times each beat to the narration it precedes, so the
+  image is on screen exactly while its words play):
+  1. **Visuals must match the voiceover.** Author one beat per narration moment and
+     describe exactly what is being said there — the image reflects the line. Don't
+     reuse a generic shot across unrelated narration.
+  2. **Animate only where it matters.** Mark a beat `Clip:` only for the hero /
+     dramatic moments where motion makes a real difference (Krishna, Arjuna, the
+     chariot, a turning point) — never trivial ambient (still water, wind). A
+     `Clip:` hero still must be drawn with enough drape/coverage to clear the video
+     tool's content filter (bare-chested deities get rejected). Everything else is
+     a `Shot:` still with subtle Ken-Burns motion.
 - Default publish visibility is **private/unlisted**; the owner opts into public per
   episode in `metadata.json`.
 - Verify before claiming done: run the actual command and read the output.
