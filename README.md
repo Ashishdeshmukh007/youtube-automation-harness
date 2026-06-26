@@ -388,6 +388,49 @@ curve (`videoViewRetention` metric) and saves it as
 Needs the **OAuth** upload token (same `YOUTUBE_CLIENT_SECRET` /
 `YOUTUBE_TOKEN`) plus the YouTube Analytics API enabled for the project.
 
+### Content calendar generator
+
+```bash
+.venv/bin/python -m studio.calendar \
+    --series "What the Gita knew about ___" \
+    --episodes 6 \
+    --start 2026-07-06
+```
+
+Plans a 6-episode mini-catalogue for a given series scaffold (one of four
+canonicals in the brand-bible). The LLM picks topics that:
+
+- fit the series scaffold,
+- cover distinct modern problems (no duplicates within the run),
+- respect attribution discipline (no invented verses).
+
+Optionally pass `--competitor-report competitor-reports/<file>.json` so the
+calendar avoids topics already saturated in the niche.
+
+Writes `content-calendars/calendar-<series>-<start>.json` with `planned_date`,
+`slug`, `working_title`, `topic`, `source_text`, and `hook_idea` per entry —
+each one ready to feed straight into `/new-video`.
+
+### Vertical short-clip extractor
+
+```bash
+.venv/bin/python -m studio.shorts episodes/<slug> --n 2
+```
+
+After a video is rendered, this extracts the **N most short-worthy** passages
+from `script.md` (chosen by the LLM with the channel's voice + the 45-75s
+sweet spot) and renders each one as a vertical 9:16 mp4 with:
+
+- a **burned-in caption** (the LLM's punchy 1-line pick, wrapped to fit
+  1080×1920 via Pillow — the sidecar `.srt` approach used for the body
+  doesn't work on Shorts/Reels/TikTok),
+- the original voiceover segment (loop the music bed quietly underneath
+  if `brand/bookend-music.wav` exists).
+
+Writes `episodes/<slug>/shorts/<n>.mp4` plus `shorts.json` with the picked
+paragraph indices, time windows, rationale, and caption text — the metadata
+to schedule them on YouTube / Reels / TikTok.
+
 ---
 
 ## Tests
@@ -396,11 +439,12 @@ Needs the **OAuth** upload token (same `YOUTUBE_CLIENT_SECRET` /
 .venv/bin/pytest
 ```
 
-180 tests covering: state machine, gate enforcement, hooks, TTS/image/music
+221 tests covering: state machine, gate enforcement, hooks, TTS/image/music
 adapters, ffmpeg assembly (xfade chain, last-shot extension, color grade,
 bookend concatenation), captions, thumbnail, upload, brand assets, configuration
 loading, end-to-end pipeline mocking, competitor research, retention import,
-and the A/B title recommender.
+the A/B title recommender, the content calendar generator, and the vertical
+short-clip extractor.
 
 ---
 
@@ -450,11 +494,13 @@ and the A/B title recommender.
 │   ├── competitors.py            #   CLI: niche/channel research (Data API)
 │   ├── retention.py              #   CLI: pull retention curve (Analytics API)
 │   ├── title_recommend.py        #   CLI: A/B title variants via LLM
+│   ├── calendar.py               #   CLI: 6-episode content calendar
+│   ├── shorts.py                 #   CLI: vertical 9:16 short-clip extractor
 │   └── providers/                #   Per-API adapters (provider-agnostic)
 │       ├── minimax.py
 │       ├── fal.py
 │       └── youtube_data.py
-├── tests/                        # 180 pytest tests
+├── tests/                        # 221 pytest tests
 ├── .env.template                 # Copy to .env and fill in
 ├── .gitignore                    # Secrets + generated media
 ├── CLAUDE.md                     # Project guide the AI reads each session
