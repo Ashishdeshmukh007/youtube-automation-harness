@@ -9,16 +9,41 @@ How a Chariot of the Self episode is built. Pair with `brand-bible` for voice.
 
 ## The spine (every episode)
 
-1. **Hook (0:00–0:30)** — name the modern problem in the viewer's own words. Concrete
-   and specific: "You check your phone before you're fully awake. By 9am you're behind."
-2. **The turn** — "Centuries ago, someone described this exactly." Name the text/figure.
-3. **The teaching** — unpack **one** central idea in plain terms, with a story or image
-   from the text. One idea per video, never five.
-4. **The bridge** — connect the idea precisely back to the modern problem.
-5. **The practice (the payoff)** — one specific, doable thing for *this week*: when,
-   where, how long. "Tomorrow morning, before you touch your phone, sit 90 seconds and
-   watch your breath" — not "meditate more". If they can't do it Tuesday, rewrite it.
-6. **The close** — one resonant line; often circles back to the chariot.
+The arc below is **time-coded** — pacing is part of the structure. These are
+the chunks YouTube's retention graph cares about most.
+
+1. **0:00–0:15 — Hook.** Name the modern problem *and* make a surprising claim.
+   Two sentences, no Sanskrit yet. *"You're not anxious because life is
+   uncertain. You're anxious because you think you are this small person in the
+   story. The Upanishads completely disagree."* If we lose them here, nothing
+   else matters. The first `Shot:` (see below) must show the viewer's pain,
+   not a landscape.
+2. **0:15–1:00 — The turn.** A relatable modern scenario (office, phone at
+   night, Sunday dread) followed by a clear promise: *"By the end of this,
+   you'll have a 2-minute practice you can use this week."* Name the text or
+   figure here — Katha Upanishad, Bhagavad Gita, Patanjali — and translate any
+   Sanskrit term once in plain English.
+3. **1:00–7:00 — The teaching.** Unpack **one** central idea in plain terms,
+   with a story or image from the text. Two or three clear beats, each with its
+   own `Shot:` / `Clip:` moment. Use a `Clip:` only for the most dramatic
+   moments (Krishna, Arjuna, the chariot, a turning point) — see
+   `visual-prompting` skill.
+4. **7:00–7:30 — The bridge.** Connect the teaching precisely back to the
+   modern problem the viewer named in the hook. Make it concrete: *what does
+   this look like in their Tuesday?*
+5. **7:30–8:00 — The practice (the payoff).** One specific, doable thing for
+   *this week*: when, where, how long. *"Tomorrow morning, before you touch
+   your phone, sit 90 seconds and watch your breath."* Not "meditate more" —
+   "meditate *this*, *here*, *for this long*." If they can't do it Tuesday,
+   rewrite it.
+6. **8:00–8:15 — The close + bridge.** A single resonant line (often circles
+   back to the chariot), then a soft pointer to a related next video —
+   *"If this helped you see your mind differently, watch 'Why You Can't Stop
+   Overthinking' next."* The bridge sells the next video and keeps them on the
+   channel.
+
+Length: **8–15 minutes total** (~1,300–2,200 spoken words). The pacing above
+scales — at 15 min, the teaching stretches to 12 min and the others hold.
 
 ## Length & pacing
 
@@ -52,3 +77,62 @@ abstract or landscape-y.
 The hook shot should **show the problem the viewer is feeling**, not the setting
 the teaching will unfold in. Save landscapes and atmosphere for shot 2 onwards;
 they work once the viewer is already watching, but they don't pull anyone in.
+
+## Worked example — "Stop Doomscrolling" (8:30 target)
+
+Use this as a reference shape. Replace the topic and figure as needed.
+
+```
+[0:00–0:15 — HOOK — ~25 words]
+Shot: a thumb scrolling a phone screen in the dark, 3:14am, tired eyes reflected in the glass
+You told yourself you'd put the phone down ten minutes ago. Now it's 3am and
+your chest is tight and you're still scrolling. Tomorrow you'll feel worse.
+[beat]
+
+[0:15–1:00 — TURN — ~95 words, relatable scene + promise]
+Shot: a woman at her kitchen table the next morning, phone face-down, staring at coffee
+You're not weak. You ran out of a tool two thousand years before it was
+designed. The Yoga Sutras of Patanjali — written around the year 200 — have
+a name for what your phone does to your attention. They call it *vrittis*,
+the whirlpools of the mind.
+[beat]
+By the end of this, you'll have a two-minute practice that breaks the scroll
+loop — and you'll know why the Sutras say this whirlpool isn't the enemy.
+[beat]
+
+[1:00–3:30 — TEACHING BEAT 1 — ~280 words, one idea: attention as a muscle]
+Shot: a single oil lamp flame in a still room, no flicker
+...
+[beat]
+
+[3:30–6:30 — TEACHING BEAT 2 — ~340 words, the practice-in-context]
+Clip: a charioteer (Arjuna archetype) at rest, reins loose, dawn light on the chariot wheel
+...
+
+[6:30–7:30 — BRIDGE — ~120 words, back to the viewer]
+Shot: the same dark bedroom as the hook, but the phone is on the nightstand, screen down
+...
+
+[7:30–8:00 — PRACTICE — ~90 words, the most concrete part]
+Shot: hands on a simple meditation cushion at sunrise, dawn coming through a window
+...
+
+[8:00–8:15 — CLOSE + BRIDGE — ~45 words]
+Shot: dawn sky over a quiet river, still water reflecting the first light
+If this helped you see your mind differently, watch "Why You Can't Stop
+Overthinking" next — it goes deeper into the Gita's view of thoughts.
+```
+
+Notes on the shape:
+
+- **Word count per chunk is the target.** Scriptwriter can flex ±10%, but if
+  the hook is over 40 words you're losing people. If the practice is under
+  60 words it's probably too vague.
+- **`Shot:` placement** marks visual beats — a new image roughly every 8–12s.
+  The cross-dissolve in assembly hides the cut; the change should feel like
+  the camera slowly reframing, not a slideshow.
+- **`Clip:` is rare.** One per video is plenty. Mark it only for the moment
+  where motion adds meaning (the chariot, a deity, a turning-point image).
+  Everything else is `Shot:`.
+- **The bridge at the end** is the single biggest lever for retention — it
+  turns a viewer into a subscriber who watches the next one. Don't end cold.

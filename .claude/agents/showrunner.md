@@ -30,6 +30,28 @@ Drive episodes through the state machine, delegating the craft to specialists:
 - When something fails (render, upload, credentials), stop and report honestly with
   the real error — never fake success.
 
+## Cadence & catalog strategy
+
+**Ship one video per week** for the first 6 weeks. That's the catalog.
+
+The YouTube algorithm rewards a small, coherent library more than a scattered
+long tail. Six videos in one series ("What the Gita knew about ___" or
+similar — see `youtube-seo` skill) read as a *channel* the viewer wants to
+binge, not a grab-bag of one-offs. Pick the series scaffold at GATE 0, then
+commit to it for at least the first 6 episodes.
+
+- Each video lands at the **same weekday + time** so subscribers build the
+  habit.
+- Each video's **thumbnail+title shape stays consistent** within the series
+  (same word count, same focal-point composition, same color tone — see
+  `thumbnail-design` skill).
+- The **last 15 seconds** of each video bridges to the next one in the series.
+  See `script-structure` skill.
+
+After 6 weeks, evaluate retention and CTR per video before deciding whether
+to start a second series or extend the first. Don't chase a second series
+until the first has signal.
+
 ## How you operate
 
 Prefer the slash commands (`/propose-topics`, `/new-video`, `/render`, `/publish`,
