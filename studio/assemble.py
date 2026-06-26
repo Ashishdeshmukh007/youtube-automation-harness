@@ -253,3 +253,94 @@ def render(*, shots: list[Path], voiceover: Path, music: Path, out: Path,
                                 for a in args))
     subprocess.run(args, check=True)
     return out
+
+
+def build_hybrid_args(*, segments: list[dict], voiceover: Path, music: Path,
+                      out: Path, total_seconds: float,
+                      sfx_events: list[dict] | None = None, sfx_resolver=None,
+                      color_grade: bool = False) -> list[str]:
+    """Assemble a body from a timeline of mixed segments (no cards — bookends are
+    concatenated separately). Each segment is a dict:
+        {"kind": "still"|"clip", "path": Path, "seconds": float}
+    Stills get Ken-Burns zoompan; clips are scaled/fps-normalized and trimmed to
+    their beat. Audio = voiceover + ducked music + SFX (same as the stills path).
+    """
+    n = len(segments)
+    if n == 0:
+        raise ValueError("at least one segment is required")
+
+    args: list[str] = ["ffmpeg", "-y"]
+    for seg in segments:
+        args += ["-i", str(seg["path"])]
+    args += ["-i", str(voiceover), "-i", str(music)]
+
+    sfx_paths, sfx_offsets = [], []
+    if sfx_events and sfx_resolver:
+        for ev in sfx_events:
+            p = sfx_resolver(ev)
+            if p is None:
+                continue
+            sfx_paths.append(p)
+            sfx_offsets.append(ev.get("offset_s", 0.0))
+            args += ["-i", str(p)]
+
+    filter_parts: list[str] = []
+    for i, seg in enumerate(segments):
+        frames = max(1, int(round(seg["seconds"] * FPS)))
+        if seg["kind"] == "clip":
+            filter_parts.append(
+                f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
+                f"crop={W}:{H},fps={FPS},setsar=1,"
+                f"trim=duration={seg['seconds']:.3f},setpts=PTS-STARTPTS[v{i}]")
+        else:
+            filter_parts.append(
+                f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,"
+                f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,"
+                f"zoompan=z='min(zoom+0.0005,1.15)':d={frames}:s={W}x{H}:fps={FPS}[v{i}]")
+
+    concat_inputs = "".join(f"[v{i}]" for i in range(n))
+    filter_parts.append(f"{concat_inputs}concat=n={n}:v=1:a=0[vconcat]")
+    vout_label = "vconcat"
+    if color_grade:
+        filter_parts.append(
+            f"[{vout_label}]eq=contrast=1.06:saturation=0.96,"
+            f"colorbalance=rs=0.02:bs=-0.03:rm=0.03:bm=-0.03:rh=0.02:bh=-0.02[vgraded]")
+        vout_label = "vgraded"
+
+    vo_idx = n
+    music_idx = n + 1
+    filter_parts.append(f"[{music_idx}:a]volume={MUSIC_VOLUME}[mlow]")
+    filter_parts.append(
+        f"[{vo_idx}:a][mlow]amix=inputs=2:duration=first:dropout_transition=0[vmix]")
+    aout_label = "vmix"
+    if sfx_paths:
+        for j, off in enumerate(sfx_offsets):
+            ms = int(round(off * 1000))
+            filter_parts.append(
+                f"[{vo_idx + 2 + j}:a]adelay={ms}|{ms},volume={SFX_VOLUME},apad[sfx{j}]")
+        if len(sfx_paths) == 1:
+            filter_parts.append(
+                f"[vmix][sfx0]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]")
+        else:
+            sfx_inputs = "".join(f"[sfx{j}]" for j in range(len(sfx_paths)))
+            filter_parts.append(
+                f"{sfx_inputs}amix=inputs={len(sfx_paths)}:duration=longest:dropout_transition=0:normalize=0[sfxall]")
+            filter_parts.append(
+                f"[vmix][sfxall]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]")
+        aout_label = "aout"
+
+    args += ["-filter_complex", ";\n".join(filter_parts)]
+    args += ["-map", f"[{vout_label}]", "-map", f"[{aout_label}]"]
+    args += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", str(out)]
+    return args
+
+
+def render_hybrid(*, segments: list[dict], voiceover: Path, music: Path, out: Path,
+                  total_seconds: float, **kwargs) -> Path:
+    """Run the hybrid (stills + clips) body assembly."""
+    args = build_hybrid_args(segments=segments, voiceover=voiceover, music=music,
+                             out=out, total_seconds=total_seconds, **kwargs)
+    out.with_suffix(".ffmpeg.log").write_text(
+        " ".join(shlex.quote(a) if " " in a or ";" in a or "|" in a else a for a in args))
+    subprocess.run(args, check=True)
+    return out

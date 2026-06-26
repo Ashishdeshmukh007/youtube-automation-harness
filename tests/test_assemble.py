@@ -1,5 +1,24 @@
 from pathlib import Path
-from studio.assemble import build_ffmpeg_args
+from studio.assemble import build_ffmpeg_args, build_hybrid_args
+
+
+def test_hybrid_mixes_stills_and_clips(tmp_path):
+    """A hybrid body: stills get Ken-Burns zoompan, clips play as video, timed."""
+    still = tmp_path / "00.png"; still.write_bytes(b"x")
+    clip = tmp_path / "01.mp4"; clip.write_bytes(b"x")
+    segments = [
+        {"kind": "still", "path": still, "seconds": 6.0},
+        {"kind": "clip", "path": clip, "seconds": 5.0},
+    ]
+    args = build_hybrid_args(
+        segments=segments, voiceover=tmp_path / "v.wav", music=tmp_path / "m.wav",
+        out=tmp_path / "o.mp4", total_seconds=11.0)
+    joined = " ".join(args)
+    assert str(still) in args and str(clip) in args
+    assert "zoompan" in joined                 # still -> Ken Burns
+    assert "trim=duration=5.000" in joined      # clip trimmed to its beat
+    assert "concat=n=2" in joined
+    assert "volume=0.03" in joined              # ducked music bed
 
 
 def test_build_args_includes_inputs_and_outputs(tmp_path):
