@@ -8,11 +8,12 @@ from pathlib import Path
 from studio.config import load_settings
 from studio.state import EpisodeState, Stage
 from studio import (tts, images, music, captions, assemble, thumbnail, upload,
-                    cards, sound_fx)
+                    sound_fx)
 
-# Design-language constants: standard card durations.
-INTRO_SECONDS = 3.0
-OUTRO_SECONDS = 6.0
+# Reusable animated brand bookends (generated once, used by every episode).
+_BRAND = Path(__file__).resolve().parents[1] / "brand"
+BOOKEND_INTRO = _BRAND / "intro.mp4"
+BOOKEND_OUTRO = _BRAND / "outro.mp4"
 
 
 def _script_shots(script_path: Path) -> tuple[str, list[str]]:
@@ -81,6 +82,21 @@ def _loop_audio(src: Path, dst: Path, seconds: float) -> Path:
     return dst
 
 
+def _concat_bookends(intro: Path, body: Path, outro: Path, out: Path) -> Path:
+    """Bracket the episode body with the reusable animated bookends. Each input is
+    normalized (1080p / 25fps / 44.1k stereo) and concatenated (re-encoded)."""
+    norm = "scale=1920:1080,fps=25,setsar=1"
+    af = "aformat=sample_rates=44100:channel_layouts=stereo"
+    subprocess.run([
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-i", str(intro), "-i", str(body), "-i", str(outro), "-filter_complex",
+        f"[0:v]{norm}[v0];[0:a]{af}[a0];[1:v]{norm}[v1];[1:a]{af}[a1];"
+        f"[2:v]{norm}[v2];[2:a]{af}[a2];[v0][a0][v1][a1][v2][a2]concat=n=3:v=1:a=1[v][a]",
+        "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-movflags", "+faststart", str(out)], check=True)
+    return out
+
+
 def render_episode(episode_dir: Path, settings=None) -> None:
     episode_dir = Path(episode_dir)
     st = EpisodeState.load(episode_dir)
@@ -108,25 +124,22 @@ def render_episode(episode_dir: Path, settings=None) -> None:
 
     total = _voiceover_seconds(episode_dir / "voiceover.wav")
 
-    # Standard design-language bookends + looped bed covering the full runtime.
-    cards.render_intro(episode_dir / "intro.png")
-    cards.render_outro(episode_dir / "outro.png")
-    total_video = INTRO_SECONDS + total + OUTRO_SECONDS
+    # Looped music bed (body length) + loudness-normalized voice.
     music_full = _loop_audio(episode_dir / "music.wav",
-                             episode_dir / "music_full.wav", total_video)
+                             episode_dir / "music_full.wav", total)
     voice_norm = _normalize_audio(episode_dir / "voiceover.wav",
                                   episode_dir / "voiceover_norm.wav")
 
-    # Captions are NOT burned in — we rely on YouTube's own captions; the shots
-    # stay clean.
+    # Render the body (shots + voice + music + sfx, graded; captions NOT burned —
+    # we rely on YouTube's captions), then bracket it with the animated bookends.
     shot_files = _image_files(episode_dir / "shots")
     sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())
+    body = episode_dir / "body.mp4"
     assemble.render(
-        shots=shot_files, voiceover=voice_norm,
-        music=music_full, out=episode_dir / "video.mp4", total_seconds=total,
-        sfx_events=sfx_events, sfx_resolver=sound_fx.resolve_event,
-        intro_card=episode_dir / "intro.png", outro_card=episode_dir / "outro.png",
-        color_grade=True)
+        shots=shot_files, voiceover=voice_norm, music=music_full, out=body,
+        total_seconds=total, sfx_events=sfx_events,
+        sfx_resolver=sound_fx.resolve_event, color_grade=True)
+    _concat_bookends(BOOKEND_INTRO, body, BOOKEND_OUTRO, episode_dir / "video.mp4")
 
     # Thumbnail from the clean (un-captioned) first shot.
     thumbnail.compose(_image_files(episode_dir / "shots")[0],
