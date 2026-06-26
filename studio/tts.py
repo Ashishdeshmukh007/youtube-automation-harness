@@ -2,6 +2,7 @@ from pathlib import Path
 from studio.config import Settings
 from studio.providers import minimax
 from studio.types import MediaResult
+from studio import pronunciation
 
 
 def synthesize(s: Settings, text: str, out_path: Path, *,
@@ -14,8 +15,11 @@ def synthesize(s: Settings, text: str, out_path: Path, *,
     emotion="neutral" pins the model to neutral affect, reducing the
     variation between sentences.
     """
+    # Respell Sanskrit terms phonetically so the English-trained voice pronounces
+    # them clearly (dharma, Arjuna, Gita, Upanishads, ...).
+    spoken = pronunciation.apply(text)
     url, headers, payload = minimax.tts_request(
-        s, text, speed=speed, emotion=emotion)
+        s, spoken, speed=speed, emotion=emotion)
     data = minimax.post_json(url, headers, payload)
     audio_hex = data["data"]["audio"]
     out_path.write_bytes(bytes.fromhex(audio_hex))

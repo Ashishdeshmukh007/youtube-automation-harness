@@ -5,7 +5,8 @@
 
 ## Palette (canonical)
 
-Use only these tones. No saturated primaries. No neon. No devotional kitsch.
+These warm cinematic tones anchor scenes and backgrounds. Vivid traditional
+colors (Krishna-blue, saffron, gold) are welcome on the figures themselves.
 
 | Role | Hex | RGB | When |
 |---|---|---|---|
@@ -50,17 +51,23 @@ neon, jpeg-artifacts, anime cel-shading, calendar-poster gold leaf.
   perfection.
 - Fabric: hand-woven, undyed cotton, linen, raw silk. No synthetic sheen.
 
+## Traditional iconography (the channel depicts the figures classically)
+
+Deities and epic figures appear in their **classic, recognizable forms** — Krishna
+blue-skinned with mukut, peacock feather and flute; Arjuna the crowned warrior-prince
+with his bow (Gandiva) — rendered as **living, cinematic film characters**, not flat
+poster art. See `brand/characters/*.md` for the canonical look of each.
+
 ## What's NEVER allowed (hard lines)
 
-- No deity portraits in devotional iconography style (no halos, no lotus throne, no
-  blue-skinned smiling god).
-- No AI-cartoon god aesthetics (no giant eyes, no anime cel-shading, no "Lord of the
-  Rings elf" features).
-- No temple-poster calendar art (no glittery gold leaf, no bright saffron robes on
-  smiling figurines).
+- Every person depicted is **Indian / South Asian** (main figures and incidental
+  people alike). Western characters only when a topic specifically calls for one.
+- No flat AI-cartoon look (no giant eyes, no anime cel-shading). Render figures as
+  living, photoreal cinematic characters.
+- No calendar-poster / sweet-shop print look — keep it filmic even when the
+  iconography is traditional.
 - No neon "om" symbols, no glowing text overlays, no runes.
-- No people in modern Western clothing. If a person appears, they wear handwoven
-  period-appropriate cloth or are deliberately timeless/abstract.
+- No people in modern or Western clothing.
 
 ## What this means for the visual-designer
 
@@ -73,4 +80,4 @@ When you write a `Shot:` prompt:
 
 Example final prompt the engine sends to MiniMax:
 
-> "Arjuna kneeling on a chariot, hands on his bow, head bowed, dawn light catching the edge of his armor. Cinematic shallow depth of field. Palette: muted earth, deep shadows RGB(32,32,32), warm gold RGB(192,160,112) highlights only. Soft directional light camera-left at 30°, atmospheric mist, weathered surfaces, handwoven period cloth. 35mm lens, rule of thirds, negative space on the right. No halos, no devotional iconography, no saturated primaries, no neon."
+> "Arjuna the crowned warrior-prince kneeling on a chariot, his great bow across his knees, head bowed, dawn light catching the gold of his crown and armor. Cinematic film still, 35mm lens, shallow depth of field, rich warm color with deep contrast and gold highlights. Soft directional light camera-left at 30°, atmospheric mist, weathered surfaces. Rule of thirds, negative space on the right. Living cinematic character, not flat poster art; no anime, no neon, no modern clothing."

@@ -1,51 +1,40 @@
 # Krishna
 
 ## Role in the channel
-The **guide** — the friend on the chariot who speaks the wisdom, but who is
-*not a guru*. Krishna is presented as a thoughtful friend, not a divine master.
-He never lectures. He sits beside Arjuna and says a few things, then is quiet.
+The **guide** — the divine friend and charioteer who speaks the wisdom to Arjuna.
+Depicted in the classic, instantly recognizable form so viewers know him at a glance.
 
 ## Canonical description (use verbatim in every prompt that includes him)
 
-> "Krishna, a South Asian man in his late twenties, slender and graceful,
-> warm umber skin a half-shade darker than Arjuna's, dark eyes that are calm
-> and faintly amused, shoulder-length wavy black hair held back from the
-> face with a simple twisted cord (no crown, no peacock-feather headdress,
-> no flute on display), a short well-kept beard outlining the jaw. He wears
-> a deep saffron-dyed handwoven cotton wrap (not bright), a thin leather
-> belt, no jewelry except a single brass armband on the left forearm. His
-> posture is unhurried — seated cross-legged or leaning on one hand, never
-> standing over Arjuna."
+> "Krishna, a youthful divine figure with the classic blue (Krishna-blue) skin,
+> a serene gentle smile and calm benevolent eyes. He wears a golden mukut (crown)
+> crowned with a single peacock feather, a yellow-gold silk dhoti (pitambara) with
+> a sash, and traditional gold jewelry (necklaces, armlets, earrings). He carries a
+> bamboo flute (bansuri). Graceful, unhurried posture — seated beside or alongside
+> Arjuna, never towering over him."
 
 ## Always
-- South Asian features. The reference image (`krishna.reference.png`) is the
-  visual anchor — match face shape, hair, beard, and skin tone.
-- Calm expression. Half-smile at most, never grinning, never stern.
-- Lower body posture than Arjuna (seated when Arjuna is upright, leaning when
-  Arjuna stands) — he's the friend who comes alongside, not the master who
-  stands above.
-- One piece of brass — the armband. That's it. No crown, no peacock feathers,
-  no flute unless the script explicitly says so.
-- Clothing a half-shade warmer than Arjuna's (saffron vs off-white) so the two
-  figures are visually distinguishable when they share a frame.
+- **Blue (Krishna-blue) skin** — his defining identity.
+- **Golden mukut with a peacock feather.**
+- **Yellow-gold silk dhoti (pitambara)** and traditional gold ornaments.
+- **Bamboo flute (bansuri)** present (held, tucked, or in hand).
+- Serene, gently smiling, benevolent expression.
+- Equal or lower eye-line than Arjuna — the friend alongside, not above.
 
 ## Never
-- No blue skin (the channel explicitly avoids the devotional blue-Krishna
-  iconography — it's the most common "calendar kitsch" trap).
-- No crown, no peacock-feather headdress, no flute-as-prop in every shot.
-- No jewelry beyond the single brass armband.
-- No standing-above-Arjuna compositions. Equal eye line or lower.
-- No "om" / mantra / glow / aura / lotus-throne imagery.
-- No anime, no giant eyes, no "young god" idealization.
+- Not stern, not wrathful — Krishna is calm and warm.
+- No modern clothing, no Western dress.
+- No anime / cartoon-god styling, no giant eyes.
 
 ## Reference
-`brand/characters/krishna.reference.png` — canonical face.
+`brand/characters/krishna.reference.png` — the canonical face/form. Fed to MiniMax
+image-01 via `subject_reference`, so keep it on-model (blue skin, mukut, peacock
+feather, flute) since the reference is reproduced literally.
 
 ## Prompt suffix (auto-appended when Krishna is detected)
 ```
-[Krishna: slender South Asian man in his late twenties, dark wavy hair to
-shoulders held back with twisted cord, short beard, calm faintly amused
-expression, deep saffron cotton wrap, single brass armband, seated posture,
-no crown, no peacock feathers, no flute, equal or lower eye-line than the
-seeker, handwoven period cloth]
+[Krishna: youthful divine figure, classic Krishna-blue skin, serene gentle smile,
+golden mukut crown with a single peacock feather, yellow-gold silk dhoti
+(pitambara), traditional gold jewelry, holding a bamboo flute, graceful calm
+posture, equal or lower eye-line than Arjuna]
 ```

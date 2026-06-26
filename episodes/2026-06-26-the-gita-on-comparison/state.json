@@ -19,6 +19,19 @@
       "stage": "images",
       "images": 3,
       "note": "character refs (Arjuna,Krishna) + shots 02/04 via subject_reference"
+    },
+    {
+      "stage": "tts",
+      "note": "voiceover re-rendered with Sanskrit pronunciation"
+    },
+    {
+      "stage": "images",
+      "images": 2,
+      "note": "character shots re-rolled as traditional Krishna/Arjuna"
+    },
+    {
+      "stage": "tts",
+      "note": "voiceover re-rendered: cleaned Sanskrit respellings"
     }
   ],
   "created_at": "2026-06-26T00:08:41",

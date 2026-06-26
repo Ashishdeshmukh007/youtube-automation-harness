@@ -13,6 +13,24 @@ def _seed(dir: Path, stage: str, approvals: dict):
     (dir / "script.md").write_text("Shot: a statue.\nShot: a mountain.")
 
 
+def test_script_shots_excludes_non_narration_lines(tmp_path):
+    script = tmp_path / "script.md"
+    script.write_text(
+        "# The dharma you're skipping\n\n"
+        "Shot: a phone screen in the dark\n"
+        "Sfx: phone-ring\n\n"
+        "It's late at night.\n"
+        "[beat]\n"
+        "You are on your road.\n"
+        "[end]\n")
+    narration, prompts = pipeline._script_shots(script)
+    assert prompts == ["a phone screen in the dark"]
+    # narration must be ONLY the spoken lines
+    assert narration == "It's late at night. You are on your road."
+    for leak in ("phone-ring", "Sfx", "beat", "end", "dharma you're skipping", "#"):
+        assert leak not in narration, f"non-narration leaked into TTS text: {leak!r}"
+
+
 def test_render_requires_script_gate(tmp_path):
     _seed(tmp_path, "script_draft", {})  # no script approval
     with pytest.raises(GateError, match="script"):
@@ -34,7 +52,6 @@ def test_render_runs_all_stages_and_advances(tmp_path, mocker):
     mocker.patch("studio.pipeline.cards.render_intro")
     mocker.patch("studio.pipeline.cards.render_outro")
     mocker.patch("studio.pipeline._loop_audio", return_value=tmp_path / "music_full.wav")
-    mocker.patch("studio.pipeline._burned_shots_dir", return_value=tmp_path / "shots")
     mocker.patch("studio.pipeline.assemble.render")
     mocker.patch("studio.pipeline.thumbnail.compose")
     pipeline.render_episode(tmp_path, settings=None)

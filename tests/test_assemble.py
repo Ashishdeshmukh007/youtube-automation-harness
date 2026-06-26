@@ -24,7 +24,8 @@ def test_build_args_includes_inputs_and_outputs(tmp_path):
     joined = " ".join(args)
     assert "concat=n=2" in joined
     assert "amix=inputs=2" in joined
-    assert "volume=0.18" in joined
+    # music bed sits very low under the narration
+    assert "volume=0.05" in joined
     assert args[-1] == str(tmp_path / "video.mp4")
 
 
@@ -159,6 +160,9 @@ def test_sfx_added_as_inputs(tmp_path):
     # adelay filter should be present for offset
     joined = " ".join(args)
     assert "adelay=2500" in joined
+    # cue is boosted and mixed without normalization so it's audible
+    assert "volume=3.0" in joined
+    assert "normalize=0" in joined
 
 
 def test_sfx_skipped_when_resolver_returns_none(tmp_path):

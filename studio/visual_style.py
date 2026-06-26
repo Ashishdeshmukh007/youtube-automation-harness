@@ -35,15 +35,14 @@ def _load_style() -> str:
     forbidden = _extract_section(lines, "What's NEVER allowed (hard lines)")
 
     _cached_style = (
-        "Cinematic shallow depth of field, 35mm lens, rule of thirds. "
-        "Palette: muted earth tones — RGB(32,32,32) shadows, RGB(58,38,32) warm shadow, "
-        "RGB(128,96,64) earth mid, RGB(160,128,96) sand, RGB(192,160,112) gold highlight, "
-        "RGB(224,200,160) off-white. No pure black, no pure white, no saturated primaries, no neon. "
-        "Lighting: soft directional from camera-left at 30° above horizon. "
-        "Always visible atmosphere (mist, dust, breath). "
-        "Hard rules: no deity portraits, no halos, no blue-skinned smiling god, "
-        "no lotus throne, no anime cel-shading, no AI-cartoon god aesthetics, "
-        "no modern Western clothing."
+        "Cinematic film still, 35mm lens, shallow depth of field, rule of thirds, "
+        "dramatic soft directional lighting, rich warm cinematic color with deep "
+        "contrast and gold highlights, visible atmosphere (mist, dust, light). "
+        "Traditional ancient-Indian / Vedic period setting and iconography are "
+        "welcome (crowns, ornaments, divine attributes, classic depictions). "
+        "Every person depicted is Indian / South Asian. "
+        "Hard rules: only Indian / South Asian people, no anime cel-shading, "
+        "no flat AI-cartoon look, no neon, no text or watermark."
     )
     return _cached_style
 

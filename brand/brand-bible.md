@@ -33,10 +33,10 @@ Every video **ends with a concrete practice the viewer can use this week.**
 
 ## What the channel is NOT
 
-- **Not religion.** No worship, no "you must believe." Framing: *"the oldest
-  operating manual for the human mind, still running."* Treat the texts the way a
-  thoughtful modern reader treats any profound source — with respect and curiosity,
-  not devotion.
+- **Practice over preaching.** We don't demand belief or worship; every video ends
+  in something the viewer can actually do — *"the oldest operating manual for the
+  human mind, still running."* We honor the tradition and depict its figures
+  reverently in their classic, recognizable forms.
 - **Not a lecture.** Not academic. No Sanskrit-heavy jargon without plain meaning.
 - **Not self-help fluff.** No empty hustle-positivity. Earn every claim from a text
   or a clear line of reasoning.
@@ -70,13 +70,21 @@ Length: 8–15 minutes (~1,300–2,200 spoken words).
 ## Visual identity
 
 - Slow, cinematic, contemplative. Visuals breathe; nothing is fast or busy.
-- Palette: muted earth tones, warm low light, deep shadow, dawn/dusk gold.
+- Palette: rich, warm cinematic color with deep contrast and gold highlights,
+  dawn/dusk light. Vivid traditional colors (Krishna-blue, saffron, gold) are
+  welcome on the figures.
 - Motifs: Himalayan foothills and rivers, weathered palm-leaf manuscripts, a lone
   chariot or horse at distance, oil lamps, still water, hands, old stone, banyan
   trees, the night sky.
-- **Tasteful and modern — never devotional kitsch.** No deity portraits, no temple-
-  poster aesthetics, no neon "om", no AI-cartoon gods. If an image looks like a
-  calendar from a sweet shop, reject it.
+- **Cinematic and reverent — depict the figures traditionally.** Krishna and Arjuna
+  (and other deities/epic figures) appear in their classic, recognizable forms —
+  Krishna blue-skinned with mukut, peacock feather and flute; Arjuna the crowned
+  warrior-prince with his bow — rendered as living, cinematic film characters, not
+  flat calendar-poster or AI-cartoon art. No anime, no neon "om", no modern/Western
+  clothing.
+- **Everyone depicted is Indian / South Asian.** Main figures (Krishna, Arjuna,
+  Chanakya, …) and any incidental people are Indian. Western characters are added
+  only when a specific topic genuinely calls for one.
 - No on-screen text overlays during the video (captions ship as a separate YouTube
   subtitle track). The frame stays clean.
 

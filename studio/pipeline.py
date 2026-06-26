@@ -1,7 +1,6 @@
 import argparse
 import json
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -11,23 +10,36 @@ from studio.state import EpisodeState, Stage
 from studio import (tts, images, music, captions, assemble, thumbnail, upload,
                     cards, sound_fx)
 
-# Design-language constants: standard card durations and the brand caption look.
+# Design-language constants: standard card durations.
 INTRO_SECONDS = 3.0
 OUTRO_SECONDS = 6.0
-_CAPTION_TEXT = (224, 200, 160)   # off-white #E0C8A0
-_CAPTION_BAND = (58, 38, 32)      # warm shadow #3A2620
-_CAPTION_BAND_ALPHA = 180
 
 
 def _script_shots(script_path: Path) -> tuple[str, list[str]]:
-    """Return (narration_text, image_prompts). Lines starting 'Shot:' are visual
-    prompts; everything else is narration."""
+    """Return (narration_text, image_prompts).
+
+    Lines starting 'Shot:' are visual prompts. Narration is the spoken text only —
+    NOT the production markers, which must never reach the TTS:
+      - 'Sfx:' sound cues
+      - bracketed stage directions ('[beat]', '[end]')
+      - markdown headers ('# Title')
+    """
     narration, prompts = [], []
     for line in script_path.read_text().splitlines():
-        if line.strip().lower().startswith("shot:"):
-            prompts.append(line.split(":", 1)[1].strip())
-        elif line.strip():
-            narration.append(line.strip())
+        s = line.strip()
+        if not s:
+            continue
+        low = s.lower()
+        if low.startswith("shot:"):
+            prompts.append(s.split(":", 1)[1].strip())
+        elif low.startswith("sfx:"):
+            continue  # sound cue, not spoken
+        elif s.startswith("[") and s.endswith("]"):
+            continue  # stage direction, not spoken
+        elif s.startswith("#"):
+            continue  # markdown header, not spoken
+        else:
+            narration.append(s)
     if not prompts:
         prompts = ["a cinematic still of ancient India at dawn, Himalayan foothills, "
                    "soft contemplative light, a weathered palm-leaf manuscript, "
@@ -58,23 +70,6 @@ def _loop_audio(src: Path, dst: Path, seconds: float) -> Path:
     return dst
 
 
-def _burned_shots_dir(episode_dir: Path, total_seconds: float) -> Path:
-    """Copy the shots and burn the captions onto the copies (brand palette),
-    leaving the originals clean (e.g. for the thumbnail). Returns the copy dir."""
-    src = episode_dir / "shots"
-    dst = episode_dir / "shots_burned"
-    if dst.exists():
-        shutil.rmtree(dst)
-    dst.mkdir(parents=True)
-    for p in _image_files(src):
-        shutil.copy(p, dst / p.name)
-    captions.burn_captions_into_frames(
-        dst, episode_dir / "captions.srt", total_seconds, fps=assemble.FPS,
-        text_color=_CAPTION_TEXT, band_color=_CAPTION_BAND,
-        band_alpha=_CAPTION_BAND_ALPHA)
-    return dst
-
-
 def render_episode(episode_dir: Path, settings=None) -> None:
     episode_dir = Path(episode_dir)
     st = EpisodeState.load(episode_dir)
@@ -96,8 +91,8 @@ def render_episode(episode_dir: Path, settings=None) -> None:
                        episode_dir / "music.wav")
     st.record_usage("music", mu.usage)
 
-    # Captions: an .srt sidecar (uploaded as a YouTube subtitle track) AND burned
-    # onto the frames for on-screen legibility (silent autoplay / mobile).
+    # Captions: an .srt sidecar only (optional YouTube subtitle track). Not burned
+    # into the frames — we rely on YouTube's captions and keep the visuals clean.
     captions.transcribe(episode_dir / "voiceover.wav", episode_dir / "captions.srt")
 
     total = _voiceover_seconds(episode_dir / "voiceover.wav")
@@ -109,7 +104,9 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     music_full = _loop_audio(episode_dir / "music.wav",
                              episode_dir / "music_full.wav", total_video)
 
-    shot_files = _image_files(_burned_shots_dir(episode_dir, total))
+    # Captions are NOT burned in — we rely on YouTube's own captions; the shots
+    # stay clean.
+    shot_files = _image_files(episode_dir / "shots")
     sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())
     assemble.render(
         shots=shot_files, voiceover=episode_dir / "voiceover.wav",

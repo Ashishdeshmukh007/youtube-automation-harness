@@ -10,14 +10,14 @@ def test_apply_brand_style_appends_palette():
     prompt = "a phone screen glowing in a dark bedroom"
     out = visual_style.apply_brand_style(prompt)
     assert prompt in out
-    assert "muted earth tones" in out
-    assert "RGB(32,32,32)" in out
+    assert "Cinematic film still" in out
+    assert "rich warm cinematic color" in out
 
 
 def test_apply_brand_style_forbidden_list_present():
     prompt = "a chariot on a riverbank at twilight"
     out = visual_style.apply_brand_style(prompt)
-    for forbidden in ["no deity portraits", "no neon", "no anime"]:
+    for forbidden in ["only Indian / South Asian people", "no neon", "no anime"]:
         assert forbidden in out, f"missing forbidden rule: {forbidden}"
 
 
@@ -50,14 +50,16 @@ def test_detect_both():
 def test_expand_prompt_adds_arjuna_suffix():
     prompt = "Arjuna kneeling, dawn light, head bowed"
     out = characters.expand_prompt(prompt)
-    assert "lean South Asian warrior" in out, "Arjuna canonical suffix must be appended"
+    assert "warrior-prince" in out, "Arjuna canonical suffix must be appended"
+    assert "Gandiva" in out
     assert prompt in out
 
 
 def test_expand_prompt_adds_krishna_suffix():
     prompt = "Krishna seated cross-legged beside the chariot"
     out = characters.expand_prompt(prompt)
-    assert "slender South Asian man" in out, "Krishna canonical suffix must be appended"
+    assert "Krishna-blue skin" in out, "Krishna canonical suffix must be appended"
+    assert "peacock feather" in out
 
 
 def test_primary_character_is_earliest_in_prompt():
@@ -102,8 +104,8 @@ def test_visual_style_then_characters_order():
     prompt = "Arjuna kneeling on a chariot at dawn, head bowed"
     with_chars = characters.expand_prompt(prompt)
     with_style = visual_style.apply_brand_style(with_chars)
-    assert "lean South Asian warrior" in with_style
-    assert "muted earth tones" in with_style
+    assert "warrior-prince" in with_style
+    assert "rich warm cinematic color" in with_style
 
 
 def test_visual_style_truncates_long_prompts():
@@ -117,4 +119,4 @@ def test_visual_style_truncates_long_prompts():
     out = visual_style.apply_brand_style(long_beat)
     assert len(out) <= 1400, f"expanded prompt is {len(out)} chars, must be <= 1400"
     # Style block must still be present at the tail
-    assert "muted earth tones" in out
+    assert "rich warm cinematic color" in out

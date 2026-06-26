@@ -8,6 +8,17 @@ def _settings():
                     "image-01", "music-2.6", "x", "y")
 
 
+def test_synthesize_respells_sanskrit_before_tts(tmp_path, mocker):
+    """The text sent to MiniMax should have Sanskrit terms phonetically respelled."""
+    spy = mocker.spy(tts.minimax, "tts_request")
+    mocker.patch("studio.providers.minimax.post_json", return_value={
+        "data": {"audio": b"x".hex()}})
+    tts.synthesize(_settings(), "the dharma of Arjuna", tmp_path / "v.wav")
+    sent_text = spy.call_args.args[1]
+    assert "dharma" not in sent_text
+    assert "Arjuna" not in sent_text
+
+
 def test_synthesize_writes_decoded_audio(tmp_path, mocker):
     fake_bytes = b"RIFFfakewav"
     mocker.patch("studio.providers.minimax.post_json", return_value={

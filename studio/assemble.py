@@ -28,6 +28,11 @@ from pathlib import Path
 
 FPS = 25
 W, H = 1920, 1080
+# Music bed level under the narration — kept very low so the voice always
+# clearly dominates (the voiceover plays at full volume).
+MUSIC_VOLUME = 0.05
+# SFX gain so beat cues (e.g. the phone-ring) are clearly audible over the mix.
+SFX_VOLUME = 3.0
 
 
 def _pad_to_frames(n: int, total: int) -> int:
@@ -182,10 +187,10 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
                        + (outro_frames / FPS if outro_card else 0.0))
         fade_start = max(0.0, total_video - 2.0)
         filter_parts.append(
-            f"[{music_idx}:a]volume=0.18,afade=t=out:st={fade_start:.3f}:d=2[mlow]")
+            f"[{music_idx}:a]volume={MUSIC_VOLUME},afade=t=out:st={fade_start:.3f}:d=2[mlow]")
         mix_dur = "longest"
     else:
-        filter_parts.append(f"[{music_idx}:a]volume=0.18[mlow]")
+        filter_parts.append(f"[{music_idx}:a]volume={MUSIC_VOLUME}[mlow]")
         mix_dur = "first"
     filter_parts.append(
         f"[{voice_label}][mlow]amix=inputs=2:duration={mix_dur}:dropout_transition=0[vmix]")
@@ -199,23 +204,25 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
             # phone-ring on shot 0) lands on its shot, not during the intro card.
             ms = int(round((off + intro_seconds) * 1000))
             sfx_filters.append(
-                f"[{vo_idx + 2 + j}:a]adelay={ms}|{ms},apad[sfx{j}]"
+                f"[{vo_idx + 2 + j}:a]adelay={ms}|{ms},volume={SFX_VOLUME},apad[sfx{j}]"
             )
-        # Mix all sfx together, then mix with voiceover+music
+        # Mix SFX onto the voice+music bed. normalize=0 keeps the bed (and the
+        # cue) at full level — the default normalize=1 would halve the whole
+        # mix for the entire video and bury the cue.
         if len(sfx_paths) == 1:
             filter_parts.append(sfx_filters[0])
             filter_parts.append(
-                f"[vmix][sfx0]amix=inputs=2:duration=first:dropout_transition=0[aout]"
+                f"[vmix][sfx0]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]"
             )
         else:
             for sf in sfx_filters:
                 filter_parts.append(sf)
             sfx_inputs = "".join(f"[sfx{j}]" for j in range(len(sfx_paths)))
             filter_parts.append(
-                f"{sfx_inputs}amix=inputs={len(sfx_paths)}:duration=longest:dropout_transition=0[sfxall]"
+                f"{sfx_inputs}amix=inputs={len(sfx_paths)}:duration=longest:dropout_transition=0:normalize=0[sfxall]"
             )
             filter_parts.append(
-                f"[vmix][sfxall]amix=inputs=2:duration=first:dropout_transition=0[aout]"
+                f"[vmix][sfxall]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[aout]"
             )
         aout_label = "aout"
 
