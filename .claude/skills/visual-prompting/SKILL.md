@@ -34,6 +34,13 @@ each a slow Ken Burns move.
 
 ## Cadence
 
-One image every ~15–25 seconds of narration. For an 8–15 min video that's roughly
-20–45 shots. Place a new `Shot:` where the idea or emotional beat turns, not on a fixed
-clock. The first shot doubles as the thumbnail base, so make it strong.
+One image every **~8–12 seconds** of narration. For an 8–15 min video that's
+roughly **45–110 shots** — the visuals change often enough that nothing feels
+static (cinematic motion through cross-dissolves; contemplative, not jumpy).
+Place a new `Shot:` where the idea or emotional beat turns, **not** on a fixed
+clock — but if a single beat lasts more than ~12 seconds, break it up with
+another shot. The first shot doubles as the thumbnail base, so make it strong.
+
+The cost: ~45–110 images per episode × ~$0.04 each at MiniMax is roughly
+$2–$4 of image spend per video. Worth it — the perceived production quality
+moves from "Ken Burns slideshow" to "filmed".

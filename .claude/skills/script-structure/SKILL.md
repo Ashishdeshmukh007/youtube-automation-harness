@@ -32,5 +32,23 @@ How a Chariot of the Self episode is built. Pair with `brand-bible` for voice.
 - **A line beginning `Shot:`** is an image prompt for that beat (the visual-designer
   adds these; the engine routes them to image generation, not the voiceover).
 - The scriptwriter focuses on the words and may leave light `[beat]` markers where
-  the image should change. Keep the prose final-quality — the owner edits this file
-  directly at GATE 1.
+  the image should change. Place a `[beat]` roughly every **8–12 seconds** — if a
+  single beat lasts longer, the visual-designer should split it into multiple
+  `Shot:` lines (cross-dissolves in the assembly keep the cut smooth). Keep the
+  prose final-quality — the owner edits this file directly at GATE 1.
+
+## The hook shot (first 5 seconds)
+
+The very first `Shot:` line in the script is the one most viewers will see
+thumbnailed, autoplayed, or scrolled past. Make it **concrete and sensory**, not
+abstract or landscape-y.
+
+❌ `"Shot: misty mountains at dawn, muted earth tones"`
+   → a wallpaper. Nothing specific is happening. The viewer has no reason to stay.
+
+✅ `"Shot: a phone screen glowing in a dark bedroom, 3:14am on the lock"`
+   → a concrete moment, in the viewer's own life, with a time and a place.
+
+The hook shot should **show the problem the viewer is feeling**, not the setting
+the teaching will unfold in. Save landscapes and atmosphere for shot 2 onwards;
+they work once the viewer is already watching, but they don't pull anyone in.

@@ -33,11 +33,53 @@ W, H = 1920, 1080
 MUSIC_VOLUME = 0.03
 # SFX gain so beat cues (e.g. the phone-ring) are clearly audible over the mix.
 SFX_VOLUME = 3.0
+# Cross-dissolve between body shots (cinematic, contemplative). Each fade trims
+# 0.5s of overlap; the last shot is extended so total duration stays unchanged.
+# Set to 0.0 to opt out (hard cuts).
+DEFAULT_XFADE_SECONDS = 0.5
 
 
 def _pad_to_frames(n: int, total: int) -> int:
     """Pad n up to total if it's a little short (cumulative drift tolerance)."""
     return max(n, total)
+
+
+def _xfade_chain(seg_labels_durs: list[tuple[str, float]],
+                 xfade_seconds: float) -> tuple[list[str], str, float]:
+    """Build an ffmpeg xfade chain between consecutive segments.
+
+    seg_labels_durs: list of (filter_label, duration_seconds) for each segment.
+    Returns (filter_parts, final_label, effective_total_duration).
+
+    For n segments each lasting d seconds, the xfade chain produces a video of
+    duration sum(d) - (n-1)*xfade_seconds (each fade overlaps two clips by
+    xfade_seconds). Callers extend the LAST segment by (n-1)*xfade_seconds to
+    preserve the original sum(d) total.
+    """
+    n = len(seg_labels_durs)
+    if n == 0:
+        raise ValueError("at least one segment is required")
+    if n == 1 or xfade_seconds <= 0:
+        # Nothing to crossfade — single clip or opt-out via xfade_seconds=0.
+        return [], seg_labels_durs[0][0], seg_labels_durs[0][1]
+
+    parts: list[str] = []
+    prev_label, prev_dur = seg_labels_durs[0]
+    cum_dur = prev_dur
+    for i in range(1, n):
+        label, dur = seg_labels_durs[i]
+        # Start the fade xfade_seconds before the previous clip ends, so the
+        # previous clip is fully visible for (cum_dur - xfade) seconds first.
+        offset = max(0.0, cum_dur - xfade_seconds)
+        out_label = f"[xf{i}]"
+        parts.append(
+            f"{prev_label}{label}xfade=transition=fade:duration={xfade_seconds:.3f}"
+            f":offset={offset:.3f}{out_label}"
+        )
+        # Output duration of this xfade step is cum_dur + max(0, dur - xfade_seconds).
+        cum_dur += max(0.0, dur - xfade_seconds)
+        prev_label = out_label
+    return parts, prev_label, cum_dur
 
 
 def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
@@ -47,7 +89,8 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
                       captions_srt: Path | None = None,
                       intro_card: Path | None = None,
                       outro_card: Path | None = None,
-                      color_grade: bool = False) -> list[str]:
+                      color_grade: bool = False,
+                      xfade_seconds: float = DEFAULT_XFADE_SECONDS) -> list[str]:
     """Return the ffmpeg command line for the full assembly.
 
     sfx_events: list of {name, offset_s} dicts (output of sound_fx.parse_script).
@@ -103,8 +146,15 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
     # === VIDEO CHAIN ===
     # Index of the first image input (accounting for optional intro card)
     img_offset = 1 if intro_card else 0
+    # The LAST shot absorbs the cumulative xfade overlap so the total body
+    # duration still matches the voiceover (otherwise the audio gets clipped
+    # by -shortest). The +leftover distribution still applies.
+    xfade_overlap_seconds = xfade_seconds * max(0, n - 1)
+    extra_frames_last = int(round(xfade_overlap_seconds * FPS))
     for i in range(n):
         this_frames = per_shot_frames + (1 if i < leftover else 0)
+        if i == n - 1:
+            this_frames += extra_frames_last
         # Use force_original_aspect_ratio + scale to ensure consistent sizing;
         # zoompan with explicit d= produces exactly this_frames output frames.
         filter_parts.append(
@@ -114,8 +164,18 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
             f"s={W}x{H}:fps={FPS}[v{i}]"
         )
 
-    # Concat video inputs (intro + shots + outro if present)
-    concat_inputs = []
+    # Cross-dissolve between consecutive body shots. Cards (intro/outro) stay
+    # hard-cut against the body so title boundaries read cleanly.
+    body_labels_durs = [
+        (f"[v{i}]", (per_shot_frames + (1 if i < leftover else 0)
+                     + (extra_frames_last if i == n - 1 else 0)) / FPS)
+        for i in range(n)
+    ]
+    xfade_parts, body_label, _ = _xfade_chain(body_labels_durs, xfade_seconds)
+    filter_parts.extend(xfade_parts)
+
+    # Concat intro + body + outro with hard cuts (cards are title boundaries).
+    concat_inputs: list[str] = []
     if intro_card:
         # Need to pad intro into a labeled video too
         filter_parts.append(
@@ -124,8 +184,7 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
             f"trim=duration={intro_frames / FPS},setpts=PTS-STARTPTS[vintro]"
         )
         concat_inputs.append("[vintro]")
-    for i in range(n):
-        concat_inputs.append(f"[v{i}]")
+    concat_inputs.append(body_label)
     if outro_card:
         outro_idx = n + img_offset
         filter_parts.append(
@@ -136,16 +195,20 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
         concat_inputs.append("[voutro]")
 
     concat_label = "vconcat"
-    filter_parts.append(
-        f"{''.join(concat_inputs)}concat=n={len(concat_inputs)}:v=1:a=0[{concat_label}]"
-    )
+    if len(concat_inputs) > 1:
+        filter_parts.append(
+            f"{''.join(concat_inputs)}concat=n={len(concat_inputs)}:v=1:a=0[{concat_label}]"
+        )
+        vout_label = concat_label
+    else:
+        # No intro/outro — body is the whole video.
+        vout_label = body_label
 
     # Optional captions burn-in
-    vout_label = concat_label
     if captions_srt:
         # subtitles filter requires libass
         filter_parts.append(
-            f"[{concat_label}]subtitles={shlex.quote(str(captions_srt))}:"
+            f"[{vout_label}]subtitles={shlex.quote(str(captions_srt))}:"
             f"force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,"
             f"OutlineColour=&H80000000,BackColour=&H80000000,BorderStyle=4,"
             f"Outline=0,Shadow=0,MarginV=60,Alignment=2'[vsubbed]"
@@ -258,7 +321,8 @@ def render(*, shots: list[Path], voiceover: Path, music: Path, out: Path,
 def build_hybrid_args(*, segments: list[dict], voiceover: Path, music: Path,
                       out: Path, total_seconds: float,
                       sfx_events: list[dict] | None = None, sfx_resolver=None,
-                      color_grade: bool = False) -> list[str]:
+                      color_grade: bool = False,
+                      xfade_seconds: float = DEFAULT_XFADE_SECONDS) -> list[str]:
     """Assemble a body from a timeline of mixed segments (no cards — bookends are
     concatenated separately). Each segment is a dict:
         {"kind": "still"|"clip", "path": Path, "seconds": float}
@@ -289,22 +353,35 @@ def build_hybrid_args(*, segments: list[dict], voiceover: Path, music: Path,
             args += ["-i", str(p)]
 
     filter_parts: list[str] = []
+    # Extend the LAST segment by the cumulative xfade overlap so the body
+    # duration still matches the voiceover after the cross-dissolves trim it.
+    xfade_overlap_seconds = xfade_seconds * max(0, n - 1)
     for i, seg in enumerate(segments):
-        frames = max(1, int(round(seg["seconds"] * FPS)))
+        seg_seconds = seg["seconds"]
+        if i == n - 1:
+            seg_seconds += xfade_overlap_seconds
+        frames = max(1, int(round(seg_seconds * FPS)))
         if seg["kind"] == "clip":
             filter_parts.append(
                 f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
                 f"crop={W}:{H},fps={FPS},setsar=1,"
-                f"trim=duration={seg['seconds']:.3f},setpts=PTS-STARTPTS[v{i}]")
+                f"trim=duration={seg_seconds:.3f},setpts=PTS-STARTPTS[v{i}]")
         else:
             filter_parts.append(
                 f"[{i}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,"
                 f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,"
                 f"zoompan=z='min(zoom+0.0005,1.15)':d={frames}:s={W}x{H}:fps={FPS}[v{i}]")
 
-    concat_inputs = "".join(f"[v{i}]" for i in range(n))
-    filter_parts.append(f"{concat_inputs}concat=n={n}:v=1:a=0[vconcat]")
-    vout_label = "vconcat"
+    # Cross-dissolve between consecutive segments (stills + clips). Bookends
+    # (intro/outro) are concatenated separately by the pipeline, so they get
+    # their own hard-cut boundaries in that step.
+    seg_labels_durs = [
+        (f"[v{i}]", segments[i]["seconds"] + (xfade_overlap_seconds if i == n - 1 else 0))
+        for i in range(n)
+    ]
+    xfade_parts, vbody_label, _ = _xfade_chain(seg_labels_durs, xfade_seconds)
+    filter_parts.extend(xfade_parts)
+    vout_label = vbody_label
     if color_grade:
         filter_parts.append(
             f"[{vout_label}]eq=contrast=1.06:saturation=0.96,"

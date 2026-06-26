@@ -3,7 +3,8 @@ from studio.assemble import build_ffmpeg_args, build_hybrid_args
 
 
 def test_hybrid_mixes_stills_and_clips(tmp_path):
-    """A hybrid body: stills get Ken-Burns zoompan, clips play as video, timed."""
+    """A hybrid body: stills get Ken-Burns zoompan, clips play as video, timed.
+    Adjacent segments cross-dissolve via xfade (cinematic, contemplative)."""
     still = tmp_path / "00.png"; still.write_bytes(b"x")
     clip = tmp_path / "01.mp4"; clip.write_bytes(b"x")
     segments = [
@@ -16,8 +17,11 @@ def test_hybrid_mixes_stills_and_clips(tmp_path):
     joined = " ".join(args)
     assert str(still) in args and str(clip) in args
     assert "zoompan" in joined                 # still -> Ken Burns
-    assert "trim=duration=5.000" in joined      # clip trimmed to its beat
-    assert "concat=n=2" in joined
+    # Clip is the LAST segment so it absorbs the (n-1)*xfade overlap to keep
+    # the body duration equal to the voiceover: 5.0 + 0.5 = 5.5s.
+    assert "trim=duration=5.500" in joined
+    assert "xfade=transition=fade" in joined    # cross-dissolve chain
+    assert "concat=n=2" not in joined           # body no longer hard-cut concat'd
     assert "volume=0.03" in joined              # ducked music bed
 
 
@@ -39,9 +43,10 @@ def test_build_args_includes_inputs_and_outputs(tmp_path):
     # voiceover and music inputs present
     assert str(tmp_path / "voiceover.wav") in args
     assert str(tmp_path / "music.wav") in args
-    # video + audio outputs mapped, music ducked under voiceover
+    # Body shots cross-dissolve (no concat for the body when no cards).
+    # Audio chain and output mapping unchanged.
     joined = " ".join(args)
-    assert "concat=n=2" in joined
+    assert "xfade=transition=fade" in joined
     assert "amix=inputs=2" in joined
     # music bed sits very low under the narration
     assert "volume=0.03" in joined
@@ -92,7 +97,9 @@ def test_per_shot_duration_is_total_over_count(tmp_path):
 
 
 def test_intro_outro_appended(tmp_path):
-    """When intro/outro cards are provided, concat should include them."""
+    """When intro/outro cards are provided, cards concat against the body — but
+    the body itself cross-dissolves (cards stay hard-cut to preserve title
+    boundaries)."""
     shots = [tmp_path / "00.png", tmp_path / "01.png"]
     for sh in shots:
         sh.write_bytes(b"x")
@@ -106,8 +113,9 @@ def test_intro_outro_appended(tmp_path):
         intro_card=intro, outro_card=outro,
     )
     joined = " ".join(args)
-    # intro (3s) + 2 shots + outro (6s) = 4 video inputs to concat
-    assert "concat=n=4" in joined
+    # intro (3s) + body (xfade chain) + outro (6s) = 3 hard-cut concat inputs
+    assert "concat=n=3" in joined
+    assert "xfade=transition=fade" in joined
     assert str(intro) in joined
     assert str(outro) in joined
 
@@ -197,3 +205,59 @@ def test_sfx_skipped_when_resolver_returns_none(tmp_path):
     # Should not contain any unknown sfx reference
     joined = " ".join(args)
     assert "no-such-sound" not in joined
+
+
+def test_xfade_chain_count_matches_segments(tmp_path):
+    """N segments get N-1 xfade transitions (no fade needed after the last clip)."""
+    stills = [tmp_path / f"{i:02d}.png" for i in range(4)]
+    for s in stills:
+        s.write_bytes(b"x")
+    args = build_ffmpeg_args(
+        shots=stills, voiceover=tmp_path / "v.wav", music=tmp_path / "m.wav",
+        out=tmp_path / "o.mp4", total_seconds=20.0)
+    joined = " ".join(args)
+    assert joined.count("xfade=transition=fade") == 3
+
+
+def test_xfade_extends_last_shot_to_preserve_total_duration(tmp_path):
+    """Each xfade trims ~0.5s of overlap between two adjacent clips. To keep the
+    total body duration equal to the voiceover, the LAST shot absorbs the
+    cumulative overlap — so the final zoompan has more frames than the others."""
+    shots = [tmp_path / f"{i:02d}.png" for i in range(3)]
+    for s in shots:
+        s.write_bytes(b"x")
+    # 30s total at 25fps = 750 frames. 3 shots = 250 each. With 2 xfades
+    # (0.5s * 2 = 1.0s = 25 frames), the last shot gets +25 frames.
+    args = build_ffmpeg_args(
+        shots=shots, voiceover=tmp_path / "v.wav", music=tmp_path / "m.wav",
+        out=tmp_path / "o.mp4", total_seconds=30.0)
+    joined = " ".join(args)
+    # First two shots keep their 250-frame zoompan; the last absorbs +25.
+    assert "d=250" in joined
+    assert "d=275" in joined
+
+
+def test_xfade_seconds_zero_opts_out_to_hard_cuts(tmp_path):
+    """Set xfade_seconds=0 to keep the old hard-cut behavior — useful for A/B
+    testing or when a contemplative cold-cut feel is wanted."""
+    shots = [tmp_path / "00.png", tmp_path / "01.png"]
+    for s in shots:
+        s.write_bytes(b"x")
+    args = build_ffmpeg_args(
+        shots=shots, voiceover=tmp_path / "v.wav", music=tmp_path / "m.wav",
+        out=tmp_path / "o.mp4", total_seconds=20.0, xfade_seconds=0.0)
+    # No xfade filters — we use a single-shot body (no concat since no cards).
+    assert "xfade=" not in " ".join(args)
+
+
+def test_xfade_hybrid_chain_count_matches_segments(tmp_path):
+    """Same chain rule for the hybrid path: N segments → N-1 xfade transitions."""
+    stills = [tmp_path / f"{i:02d}.png" for i in range(3)]
+    for s in stills:
+        s.write_bytes(b"x")
+    segments = [{"kind": "still", "path": s, "seconds": 5.0} for s in stills]
+    args = build_hybrid_args(
+        segments=segments, voiceover=tmp_path / "v.wav", music=tmp_path / "m.wav",
+        out=tmp_path / "o.mp4", total_seconds=15.0)
+    joined = " ".join(args)
+    assert joined.count("xfade=transition=fade") == 2
