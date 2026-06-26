@@ -48,3 +48,14 @@ episodes/*/shots_burned/
 episodes/*/body.mp4
 episodes/*/broll/
 episodes/*/clips/
+
+# Brand assets are channel-specific identity — each fork generates its own.
+# Markdown templates (brand-bible.md, characters/*.md, sound-fx/README.md,
+# visual-style.md) ARE committed; the binary reference files are not.
+brand/intro.mp4
+brand/outro.mp4
+brand/bookend-music.wav
+brand/style-anchor.reference.png
+brand/characters/*.reference.jpg
+brand/characters/*.reference.png
+brand/sound-fx/*.wav
