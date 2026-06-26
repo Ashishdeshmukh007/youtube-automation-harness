@@ -1,0 +1,25 @@
+{
+  "$comment": "Hermes harness guards. Both hooks are deterministic defense-in-depth; the studio engine also enforces the gates in code. Edit .claude/settings.template.json to keep this in sync (the template is the source of truth).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.venv/bin/python\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/secret-guard.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.venv/bin/python\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/gate-guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
