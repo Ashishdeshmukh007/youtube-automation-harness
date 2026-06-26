@@ -1,8 +1,9 @@
 {
   "slug": "2026-06-26-the-gita-on-comparison",
-  "stage": "render_review",
+  "stage": "published",
   "approvals": {
-    "script": "2026-06-26T00:14:49"
+    "script": "2026-06-26T00:14:49",
+    "video": "2026-06-26T19:40:26"
   },
   "usage": [
     {
@@ -49,5 +50,6 @@
   ],
   "sfx_used": [
     "phone-ring"
-  ]
+  ],
+  "youtube_video_id": "8GobLfuSP_g"
 }
