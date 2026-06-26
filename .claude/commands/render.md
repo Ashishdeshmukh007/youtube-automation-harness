@@ -13,7 +13,7 @@ Produce the video for **$ARGUMENTS**. Requires the script gate (the engine enfor
    It must report **3/3** endpoints. If not, stop and report — do not render against a
    failing Stage 0.
 2. **Shot list.** Delegate to the **visual-designer** to add `Shot:` lines to
-   `episodes/$ARGUMENTS/script.md` (one image every ~15–25s of narration) if they
+   `episodes/$ARGUMENTS/script.md` (one image every ~8–12s of narration) if they
    aren't already there. Uses `visual-prompting`.
 3. **Render** via the engine (voice → images → music → captions → assembly → thumbnail):
    ```bash

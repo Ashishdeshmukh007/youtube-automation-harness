@@ -7,7 +7,8 @@ description: Use when writing Shot: image prompts for a Chariot of the Self epis
 
 You write the `Shot:` lines in `script.md`. The engine (`studio/images.py`, MiniMax
 `image-01`) generates one still per `Shot:` line during render; `assemble.py` gives
-each a slow Ken Burns move.
+each a slow Ken Burns move and cross-dissolves 0.5s between consecutive shots so the
+cut feels cinematic.
 
 ## The aesthetic (from the brand-bible)
 

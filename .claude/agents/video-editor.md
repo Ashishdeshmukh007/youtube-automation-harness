@@ -11,8 +11,10 @@ Read the `ffmpeg-assembly` skill.
 ## What you do
 
 Assembly is performed by `studio/assemble.py` via `python -m studio.pipeline render`:
-- Each still is shown for an equal slice of the voiceover with a slow Ken Burns zoom.
-- Music is mixed low (~0.18) under the voiceover.
+- Each still is shown for an equal slice of the voiceover with a slow Ken Burns
+  zoom, **plus a 0.5s cross-dissolve between consecutive shots** (cinematic motion;
+  cards stay hard-cut against the body).
+- Music is mixed very low (0.03) under the voiceover.
 - Captions ship as an `.srt` sidecar (uploaded as a YouTube subtitle track), **not**
   burned into the frame — keep visuals clean.
 - Output: `episodes/<slug>/video.mp4` (1920×1080, H.264 + AAC).

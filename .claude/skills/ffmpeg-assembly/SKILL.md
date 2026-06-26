@@ -13,8 +13,13 @@ do not reimplement the ffmpeg graph.
 
 - **Timing** — each still is shown for an equal slice of the voiceover duration
   (measured with `ffprobe`), so the visuals always match the narration length.
-- **Motion** — a slow Ken Burns zoom on each still so nothing feels static.
-- **Audio** — music is mixed **low (~0.18)** under the voiceover so words stay forward.
+- **Motion** — a slow Ken Burns zoom on each still **plus** a 0.5s cross-dissolve
+  (`xfade`) between consecutive body shots. The cadence is one new still every
+  ~8–12s, so nothing feels static (the cinematic motion School of Life uses).
+  Intro/outro cards stay hard-cut against the body so title boundaries read
+  cleanly. Set `xfade_seconds=0` to opt out to plain hard cuts.
+- **Audio** — music is mixed **very low (0.03)** under the voiceover so words
+  stay forward and music never competes.
 - **Captions** — produced by Whisper as `captions.srt` and shipped as a **sidecar**
   (uploaded as a YouTube subtitle track), **not burned into the frame**. This keeps the
   visuals clean — the brand has no on-screen text.

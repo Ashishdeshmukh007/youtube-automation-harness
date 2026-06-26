@@ -12,8 +12,9 @@ Read `brand/brand-bible.md` (visual identity) and the `visual-prompting` and
 ## Shot list
 
 Add one `Shot:` line per beat to `episodes/<slug>/script.md` (a line beginning
-`Shot:` is read by the engine as an image prompt). Aim for one image every ~15–25
-seconds of narration.
+`Shot:` is read by the engine as an image prompt). Aim for one image every
+**~8–12 seconds** of narration — see the `visual-prompting` skill for the full
+cadence and cost guidance.
 
 - Slow, cinematic, contemplative. Muted earth tones, warm low light, deep shadow.
 - Motifs: Himalayan foothills/rivers, palm-leaf manuscripts, a lone chariot/horse,
