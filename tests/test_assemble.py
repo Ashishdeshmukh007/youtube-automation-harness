@@ -25,7 +25,7 @@ def test_build_args_includes_inputs_and_outputs(tmp_path):
     assert "concat=n=2" in joined
     assert "amix=inputs=2" in joined
     # music bed sits very low under the narration
-    assert "volume=0.05" in joined
+    assert "volume=0.03" in joined
     assert args[-1] == str(tmp_path / "video.mp4")
 
 

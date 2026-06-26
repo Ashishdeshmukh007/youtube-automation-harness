@@ -30,7 +30,7 @@ FPS = 25
 W, H = 1920, 1080
 # Music bed level under the narration — kept very low so the voice always
 # clearly dominates (the voiceover plays at full volume).
-MUSIC_VOLUME = 0.05
+MUSIC_VOLUME = 0.03
 # SFX gain so beat cues (e.g. the phone-ring) are clearly audible over the mix.
 SFX_VOLUME = 3.0
 
@@ -169,6 +169,9 @@ def build_ffmpeg_args(*, shots: list[Path], voiceover: Path, music: Path,
 
     # Voice: when an intro card precedes the shots, delay the narration so it
     # starts when the first shot starts (not talking over the intro card).
+    # NB: the voice is loudness-normalized upstream (pipeline._normalize_audio) as a
+    # separate pre-pass — doing loudnorm in this filtergraph corrupts the mux
+    # (loudnorm emits broken PTS that survives even an asetpts reset).
     intro_seconds = (intro_frames / FPS) if intro_card else 0.0
     if intro_seconds:
         intro_ms = int(round(intro_seconds * 1000))

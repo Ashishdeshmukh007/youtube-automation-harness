@@ -59,6 +59,17 @@ def _image_files(shots_dir: Path) -> list[Path]:
     return sorted(shots_dir.glob("[0-9][0-9].png"))
 
 
+def _normalize_audio(src: Path, dst: Path) -> Path:
+    """Loudness-normalize the voice to an even level (the TTS drifts in volume over
+    long narration) as a clean 44.1k mono wav. Done as a SEPARATE pre-pass —
+    loudnorm inside the assembly filtergraph corrupts the mux (non-monotonic DTS)."""
+    subprocess.run(
+        ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(src),
+         "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "44100", "-ac", "1", str(dst)],
+        check=True)
+    return dst
+
+
 def _loop_audio(src: Path, dst: Path, seconds: float) -> Path:
     """Loop a (short) audio file to cover `seconds`, with a 2s fade-out tail.
     MiniMax music caps at ~70s, so a full episode needs the bed looped."""
@@ -103,13 +114,15 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     total_video = INTRO_SECONDS + total + OUTRO_SECONDS
     music_full = _loop_audio(episode_dir / "music.wav",
                              episode_dir / "music_full.wav", total_video)
+    voice_norm = _normalize_audio(episode_dir / "voiceover.wav",
+                                  episode_dir / "voiceover_norm.wav")
 
     # Captions are NOT burned in — we rely on YouTube's own captions; the shots
     # stay clean.
     shot_files = _image_files(episode_dir / "shots")
     sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())
     assemble.render(
-        shots=shot_files, voiceover=episode_dir / "voiceover.wav",
+        shots=shot_files, voiceover=voice_norm,
         music=music_full, out=episode_dir / "video.mp4", total_seconds=total,
         sfx_events=sfx_events, sfx_resolver=sound_fx.resolve_event,
         intro_card=episode_dir / "intro.png", outro_card=episode_dir / "outro.png",

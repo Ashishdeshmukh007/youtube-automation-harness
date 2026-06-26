@@ -52,6 +52,7 @@ def test_render_runs_all_stages_and_advances(tmp_path, mocker):
     mocker.patch("studio.pipeline.cards.render_intro")
     mocker.patch("studio.pipeline.cards.render_outro")
     mocker.patch("studio.pipeline._loop_audio", return_value=tmp_path / "music_full.wav")
+    mocker.patch("studio.pipeline._normalize_audio", return_value=tmp_path / "voiceover_norm.wav")
     mocker.patch("studio.pipeline.assemble.render")
     mocker.patch("studio.pipeline.thumbnail.compose")
     pipeline.render_episode(tmp_path, settings=None)
