@@ -13,14 +13,16 @@ def _auth(fal_key: str) -> dict:
     return {"Authorization": f"Key {fal_key}", "Content-Type": "application/json"}
 
 
-def i2v_request(fal_key: str, image_url: str, prompt: str, *, model: str = I2V_MODEL):
+def i2v_request(fal_key: str, image_url: str, prompt: str, *, model: str = I2V_MODEL,
+                resolution: str = "480p"):
     """Build (url, headers, payload) for an image-to-video submission.
-    image_url may be a public URL or a base64 data URI."""
+    image_url may be a public URL or a base64 data URI. resolution "480p" (default,
+    cheaper — upscaled to 1080p in assembly) or "720p"."""
     url = f"https://queue.fal.run/{model}"
     # Disable the input safety checker — it false-positives on our devotional /
     # battlefield art (bare-chested deities, etc.), blocking otherwise fine frames.
     payload = {"image_url": image_url, "prompt": prompt,
-               "enable_safety_checker": False}
+               "resolution": resolution, "enable_safety_checker": False}
     return url, _auth(fal_key), payload
 
 

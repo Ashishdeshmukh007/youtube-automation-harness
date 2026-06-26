@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -19,6 +20,14 @@ BOOKEND_OUTRO = _BRAND / "outro.mp4"
 _CLIP_MOTION = ("Gentle cinematic motion: a slow, subtle push-in; dust, light, hair "
                 "and cloth drift softly; the subjects hold their poses. Reverent, "
                 "filmic, no distortion.")
+
+# Budget guardrail: cap how many 'Clip:' beats we actually animate via fal per
+# episode. fal.ai charges per generated clip (~US$0.40-0.60 at 480p), so a script
+# that marks every beat as a Clip: would blow the per-episode budget. The first
+# N Clip: beats in script order are animated; any extras are auto-demoted to
+# Ken-Burns stills (motion still comes from the zoompan). Override per-render
+# with FAL_MAX_CLIPS_PER_EP if you want more (or fewer) motion beats.
+MAX_CLIPS_PER_EP = int(os.environ.get("FAL_MAX_CLIPS_PER_EP", "5"))
 
 
 def _script_shots(script_path: Path) -> tuple[str, list[str]]:
@@ -93,6 +102,36 @@ def _voiceover_seconds(path: Path) -> float:
 
 def _image_files(shots_dir: Path) -> list[Path]:
     return sorted(shots_dir.glob("[0-9][0-9].png"))
+
+
+def _build_hybrid_segments(beats: list[dict], *, stills: list[Path],
+                           total_seconds: float, fal_key: str,
+                           clips_dir: Path, cap: int) -> list[dict]:
+    """Build the hybrid timeline. Animates the first `cap` 'Clip:' beats (in script
+    order) via fal.ai; any extras — and every beat when no fal_key — is a Ken-Burns
+    still. Returns a list of {'kind': 'still'|'clip', 'path', 'seconds'} segments.
+
+    Pure: no I/O beyond what video_clips.animate triggers. Separated from
+    render_episode so the cap behavior can be tested without ffmpeg/keys.
+    """
+    total_words = sum(b["words"] for b in beats) or 1
+    clip_beat_count = sum(1 for b in beats if b["kind"] == "clip")
+    if clip_beat_count > cap:
+        print(f"[render] {clip_beat_count} Clip: beats in script, "
+              f"animating only the first {cap} (FAL_MAX_CLIPS_PER_EP). "
+              f"The rest will be Ken-Burns stills.")
+    segments: list[dict] = []
+    clips_animated = 0
+    for i, b in enumerate(beats):
+        secs = max(2.0, b["words"] / total_words * total_seconds)
+        if b["kind"] == "clip" and fal_key and clips_animated < cap:
+            clip = video_clips.animate(fal_key, stills[i], _CLIP_MOTION,
+                                       clips_dir / f"{i:02d}.mp4")
+            segments.append({"kind": "clip", "path": clip, "seconds": secs})
+            clips_animated += 1
+        else:
+            segments.append({"kind": "still", "path": stills[i], "seconds": secs})
+    return segments
 
 
 def _normalize_audio(src: Path, dst: Path) -> Path:
@@ -171,16 +210,10 @@ def render_episode(episode_dir: Path, settings=None) -> None:
     # Ken-Burns stills. We animate only where motion has real impact.
     stills = _image_files(episode_dir / "shots")
     clips_dir = episode_dir / "clips"; clips_dir.mkdir(exist_ok=True)
-    total_words = sum(b["words"] for b in beats) or 1
-    segments = []
-    for i, b in enumerate(beats):
-        secs = max(2.0, b["words"] / total_words * total)
-        if b["kind"] == "clip" and s.fal_key:
-            clip = video_clips.animate(s.fal_key, stills[i], _CLIP_MOTION,
-                                       clips_dir / f"{i:02d}.mp4")
-            segments.append({"kind": "clip", "path": clip, "seconds": secs})
-        else:
-            segments.append({"kind": "still", "path": stills[i], "seconds": secs})
+    segments = _build_hybrid_segments(
+        beats, stills=stills, total_seconds=total,
+        fal_key=s.fal_key, clips_dir=clips_dir,
+        cap=MAX_CLIPS_PER_EP)
 
     # Body (graded; captions NOT burned — YouTube auto-captions), then bookends.
     sfx_events = sound_fx.parse_script((episode_dir / "script.md").read_text())

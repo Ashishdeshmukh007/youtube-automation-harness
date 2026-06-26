@@ -60,7 +60,8 @@ def test_render_requires_script_gate(tmp_path):
 
 def test_render_runs_all_stages_and_advances(tmp_path, mocker):
     _seed(tmp_path, "script_approved", {"script": "2026-06-25T10:00:00"})
-    mocker.patch("studio.pipeline.load_settings", return_value=object())
+    # _build_hybrid_segments reads s.fal_key; provide it on the settings mock.
+    mocker.patch("studio.pipeline.load_settings", return_value=mocker.Mock(fal_key=""))
     mocker.patch("studio.pipeline.tts.synthesize",
                  return_value=mocker.Mock(usage={"characters": 5}))
     mocker.patch("studio.pipeline.images.generate",
@@ -80,6 +81,47 @@ def test_render_runs_all_stages_and_advances(tmp_path, mocker):
     st = EpisodeState.load(tmp_path)
     assert st.stage == Stage.RENDER_REVIEW
     assert any(u["stage"] == "tts" for u in st.data["usage"])
+
+
+def test_build_hybrid_segments_caps_clip_beats(tmp_path, mocker):
+    """Scripts may mark many beats as Clip:, but we animate only the first N (per
+    FAL_MAX_CLIPS_PER_EP) — extras become Ken-Burns stills to keep the per-episode
+    fal spend under control. The cap is the budget guardrail."""
+    beats = [
+        {"kind": "still", "prompt": "a", "words": 2},
+        {"kind": "clip",  "prompt": "b", "words": 2},
+        {"kind": "clip",  "prompt": "c", "words": 2},
+        {"kind": "clip",  "prompt": "d", "words": 2},
+        {"kind": "still", "prompt": "e", "words": 2},
+        {"kind": "clip",  "prompt": "f", "words": 2},  # over the cap -> still
+        {"kind": "clip",  "prompt": "g", "words": 2},  # over the cap -> still
+    ]
+    stills = [tmp_path / f"{i:02d}.png" for i in range(len(beats))]
+    animate = mocker.patch("studio.pipeline.video_clips.animate",
+                           side_effect=lambda *a, **kw: a[3])  # out_path (positional)
+    segs = pipeline._build_hybrid_segments(
+        beats, stills=stills, total_seconds=14.0, fal_key="fal-key",
+        clips_dir=tmp_path / "clips", cap=3)
+    # First 3 Clip: beats animated; the rest demoted to stills.
+    assert [s["kind"] for s in segs] == [
+        "still", "clip", "clip", "clip", "still", "still", "still"
+    ]
+    # fal was called exactly 3 times — the cap, not the script's clip count.
+    assert animate.call_count == 3
+
+
+def test_build_hybrid_segments_no_fal_key_demotes_all_clips(tmp_path):
+    """No fal_key configured (cheap episode) -> every Clip: beat falls back to a
+    Ken-Burns still. Animation is purely opt-in."""
+    beats = [
+        {"kind": "clip", "prompt": "a", "words": 3},
+        {"kind": "clip", "prompt": "b", "words": 3},
+    ]
+    stills = [tmp_path / f"{i:02d}.png" for i in range(len(beats))]
+    segs = pipeline._build_hybrid_segments(
+        beats, stills=stills, total_seconds=6.0, fal_key="",
+        clips_dir=tmp_path / "clips", cap=5)
+    assert [s["kind"] for s in segs] == ["still", "still"]
 
 
 def test_publish_requires_video_gate(tmp_path):
